@@ -230,7 +230,7 @@ int m_recvfrom(int sock,char *buf,int len,int flags,long s_ip,int s_port)
     }
 
     // check if the recv buffer is empty
-    if(sm[i].recvbuffer_in == sm[i].recvbuffer_out)
+    if(sm[i].recvbuffer_in == -1 && sm[i].recvbuffer_out == -1)
     {
         errno = ENOMSG;
         perror("Recv buffer empty\n");
@@ -238,7 +238,68 @@ int m_recvfrom(int sock,char *buf,int len,int flags,long s_ip,int s_port)
         return -1;
     }
 
-    // get the message from the recv buffer
-    strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
+    if(sm[i].recvbuffer_in == sm[i].recvbuffer_out)
+    {
+        strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
+        sm[i].recvbuffer_in = -1;
+        sm[i].recvbuffer_out = -1;
+    }
+    else 
+    {
+        strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
+        sm[i].recvbuffer_out = (sm[i].recvbuffer_out+1)%5;
+    }
 
+    V(sem_id);
+
+    return strlen(buf);
+}
+
+int m_close(int sock)
+{
+    // get the semaphore for the shared memory
+    key_t sem_key = ftok("SM",1);
+    int sem_id = semget(sem_key, 1, 0666);
+
+    // get the shared memory
+    key_t key = ftok("SM",2);
+    int sm_id = shmget(key, sizeof(SM)*25, 0666);
+
+    // attach the shared memory to the process
+    SM *sm = (SM *)shmat(sm_id, NULL, 0);
+
+    P(sem_id);
+
+    // find the SM with the given sock
+    int i;
+    for(i=0; i<25; i++)
+    {
+        if(sm[i].mtp_id == sock)
+            break;
+    }
+
+    if(i>=25)
+    {
+        // set errno to EBADF
+        errno = EBADF;
+        perror("No such socket\n");
+        V(sem_id);
+        return -1;
+    }
+
+    // close the udp socket
+    if(sm[i].udp_id != 0){
+        if(close(sm[i].udp_id)<0){
+            perror("close error\n");
+            V(sem_id);
+            return -1;
+        }
+        
+    }
+
+    memset(&sm[i], 0, sizeof(SM));
+
+    V(sem_id);
+
+    return 0;
 }

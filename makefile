@@ -26,4 +26,4 @@ user2.o: user2.c msocket.h
 	$(CC) $(CFLAGS) -c user2.c
 
 clean:
-	rm -f *.o *.a initmsocket user1 user2
+	rm -f *.o *.a *.gch initmsocket user1 user2

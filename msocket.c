@@ -337,3 +337,13 @@ int m_close(int sock)
 
     return 0;
 }
+
+int dropMessage(float p)
+{
+    // generate a random number between 0 and 1, if it is less than p, return 1, else return 0
+    float r = (float)rand()/(float)RAND_MAX;
+    if(r<p)
+        return 1;
+    else
+        return 0;
+}

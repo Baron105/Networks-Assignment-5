@@ -11,7 +11,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
-#include <errno.h> 
+#include <errno.h>
+#include <time.h>
 
 
 #define P(s) semop(s, &sem_lock, 1)
@@ -56,3 +57,5 @@ int m_bind(int sock,long s_ip,int s_port,long d_ip,int d_port);
 int m_sendto(int sock,char *buf,int len,int flags,long d_ip,int d_port);
 int m_recvfrom(int sock,char *buf,int len,int flags,long s_ip,int s_port);
 int m_close(int sock);
+
+int dropMessage(float p);

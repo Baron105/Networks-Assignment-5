@@ -49,10 +49,6 @@ int m_socket(int domain, int type, int protocol)
     sm[i].udp_id = udp_id;
     sm[i].mtp_id = i+1;
     sm[i].pid = getpid();
-    sm[i].sendbuffer_in = -1;
-    sm[i].sendbuffer_out = -1;
-    sm[i].recvbuffer_in = -1;
-    sm[i].recvbuffer_out = -1;
 
     // set recieve buffer to \0
     for(int j=0; j<5; j++)
@@ -65,9 +61,16 @@ int m_socket(int domain, int type, int protocol)
     sm[i].swnd.right = -1;
 
     sm[i].rwnd.window_size = 5;
-    sm[i].rwnd.left = -1;
-    sm[i].rwnd.middle = -1;
-    sm[i].rwnd.right = -1;
+    sm[i].rwnd.left = 0;
+    sm[i].rwnd.middle = 0;
+    sm[i].rwnd.right = 5;
+
+    // set the sendand receive buffer to variables
+    sm[i].sendbuffer_in = -1;
+    sm[i].sendbuffer_out = -1;
+
+    sm[i].recvbuffer_in = -1;
+    sm[i].recvbuffer_out = -1;
 
     V(sem_id);
 

@@ -90,6 +90,8 @@ int m_socket(int domain, int type, int protocol)
     sm[i].recvbuffer_in = -1;
     sm[i].recvbuffer_out = -1;
 
+    sm[i].last_seq = -1;
+
     V(sem_id);
 
     //detach the shared memory
@@ -232,12 +234,14 @@ int m_sendto(int sock,char *buf,int len,int flags,long d_ip,int d_port)
 
     if(sm[i].sendbuffer_in == -1 && sm[i].sendbuffer_out == -1)
     {
+        sm[i].last_seq = (sm[i].last_seq+1)%15;
         sm[i].sendbuffer_in = 0;
         sm[i].sendbuffer_out = 0;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
     }
     else 
     {
+        sm[i].last_seq = (sm[i].last_seq+1)%15;
         sm[i].sendbuffer_in = (sm[i].sendbuffer_in+1)%10;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
     }

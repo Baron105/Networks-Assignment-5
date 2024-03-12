@@ -36,17 +36,35 @@ int m_socket(int domain, int type, int protocol)
     }
 
     // create a udp socket
-    int udp_id = socket(domain, type, protocol);
-    if(udp_id<0)
+    // shmget sem1 sem2
+    key_t sockinfo = ftok("SM",3);
+    int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666);
+
+    // attach the shared memory to the process
+    SOCK_INFO *si = (SOCK_INFO *)shmat(sockinfo_id, NULL, 0);
+
+    // get the semaphore for the shared memory
+    key_t sem_key1 = ftok("SM",4);
+    int sem_id1 = semget(sem_key1, 1, 0666);
+    key_t sem_key2 = ftok("SM",5);
+    int sem_id2 = semget(sem_key2, 1, 0666);
+
+    V(sem_id1);
+    P(sem_id2);
+    if(si->sock_id == -1)
     {
+        errno = si->errnum;
         perror("socket error\n");
-        memset(&sm[i], 0, sizeof(SM));
+        memset(si, 0, sizeof(SOCK_INFO));
         V(sem_id);
         return -1;
     }
 
-    // set the udp_id in the SM
-    sm[i].udp_id = udp_id;
+    sm[i].udp_id = si->sock_id;
+    
+    memset(si, 0, sizeof(SOCK_INFO));
+
+    // set the mtp_id in the SM
     sm[i].mtp_id = i+1;
     sm[i].pid = getpid();
 
@@ -72,7 +90,12 @@ int m_socket(int domain, int type, int protocol)
     sm[i].recvbuffer_in = -1;
     sm[i].recvbuffer_out = -1;
 
+    sm[i].last_seq = -1;
+
     V(sem_id);
+
+    //detach the shared memory
+    shmdt(sm);
 
 
     return i+1;
@@ -110,24 +133,43 @@ int m_bind(int sock,long s_ip,int s_port,long d_ip,int d_port)
         return -1;
     }
 
-    // bind the udp socket
-    struct sockaddr_in addr;
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(s_port);
-    addr.sin_addr.s_addr = s_ip;
+    // get the shared memory of sockinfo
+    key_t sockinfo = ftok("SM",3);
+    int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666);
 
-    int ret = bind(sm[i].udp_id, (struct sockaddr *)&addr, sizeof(addr));
-    if(ret<0)
+    // attach the shared memory to the process
+    SOCK_INFO *si = (SOCK_INFO *)shmat(sockinfo_id, NULL, 0);
+
+    // get the semaphore for the shared memory
+    key_t sem_key1 = ftok("SM",4);
+    int sem_id1 = semget(sem_key1, 1, 0666);
+    key_t sem_key2 = ftok("SM",5);
+    int sem_id2 = semget(sem_key2, 1, 0666);
+
+    si->ip = s_ip;
+    si->port = s_port;
+    si->sock_id = sm[i].udp_id;
+
+    V(sem_id1);
+    P(sem_id2);
+    if(si->sock_id == -1)
     {
+        errno = si->errnum;
         perror("bind error\n");
+        memset(si, 0, sizeof(SOCK_INFO));
         V(sem_id);
         return -1;
     }
+
+    memset(si, 0, sizeof(SOCK_INFO));
 
     sm[i].ip = s_ip;
     sm[i].port = s_port;
 
     V(sem_id);
+
+    //detach the shared memory
+    shmdt(sm);
 
     return 0;
 
@@ -192,17 +234,22 @@ int m_sendto(int sock,char *buf,int len,int flags,long d_ip,int d_port)
 
     if(sm[i].sendbuffer_in == -1 && sm[i].sendbuffer_out == -1)
     {
+        sm[i].last_seq = (sm[i].last_seq+1)%15;
         sm[i].sendbuffer_in = 0;
         sm[i].sendbuffer_out = 0;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
     }
     else 
     {
+        sm[i].last_seq = (sm[i].last_seq+1)%15;
         sm[i].sendbuffer_in = (sm[i].sendbuffer_in+1)%10;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
     }
 
     V(sem_id);
+
+    //detach the shared memory
+    shmdt(sm);
 
     return len;
 }
@@ -286,6 +333,9 @@ int m_recvfrom(int sock,char *buf,int len,int flags,long s_ip,int s_port)
 
     V(sem_id);
 
+    //detach the shared memory
+    shmdt(sm);
+
     return strlen(buf);
 }
 
@@ -334,6 +384,10 @@ int m_close(int sock)
     memset(&sm[i], 0, sizeof(SM));
 
     V(sem_id);
+
+
+    //detach the shared memory
+    shmdt(sm);
 
     return 0;
 }

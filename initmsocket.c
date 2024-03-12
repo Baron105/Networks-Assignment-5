@@ -23,7 +23,7 @@ typedef struct{
 }msg;
 
 typedef struct{
-    int window_size ;
+    int window_size ; // useful for the sender to know how much space is there in receiver buffer
     int array[15];
     int left ;
     int middle ;
@@ -46,6 +46,7 @@ typedef struct{
     window swnd;
     window rwnd;
     int nospace;
+    int flag;
 }SM;
 
 int main()
@@ -98,3 +99,6 @@ int main()
     }
 
 }
+
+
+// have delete the  shared memory and semaphore

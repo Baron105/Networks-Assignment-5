@@ -54,6 +54,21 @@ int m_socket(int domain, int type, int protocol)
     sm[i].recvbuffer_in = -1;
     sm[i].recvbuffer_out = -1;
 
+    // set recieve buffer to \0
+    for(int j=0; j<5; j++)
+        memset(sm[i].recvbuffer[j].text, '\0', 1024);
+
+    // set the window size
+    sm[i].swnd.window_size = 5;
+    sm[i].swnd.left = -1;
+    sm[i].swnd.middle = -1;
+    sm[i].swnd.right = -1;
+
+    sm[i].rwnd.window_size = 5;
+    sm[i].rwnd.left = -1;
+    sm[i].rwnd.middle = -1;
+    sm[i].rwnd.right = -1;
+
     V(sem_id);
 
 
@@ -240,13 +255,29 @@ int m_recvfrom(int sock,char *buf,int len,int flags,long s_ip,int s_port)
 
     if(sm[i].recvbuffer_in == sm[i].recvbuffer_out)
     {
+        if(strncmp(sm[i].recvbuffer[sm[i].recvbuffer_out].text, "\0",1) == 0)
+        {
+            errno = ENOMSG;
+            perror("Recv buffer empty\n");
+            V(sem_id);
+            return -1;
+        }
         strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
+        memset(sm[i].recvbuffer[sm[i].recvbuffer_out].text, '\0', 1024);
         sm[i].recvbuffer_in = -1;
         sm[i].recvbuffer_out = -1;
     }
     else 
     {
+        if(strncmp(sm[i].recvbuffer[sm[i].recvbuffer_out].text, "\0",1) == 0)
+        {
+            errno = ENOMSG;
+            perror("Recv buffer empty\n");
+            V(sem_id);
+            return -1;
+        }
         strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
+        memset(sm[i].recvbuffer[sm[i].recvbuffer_out].text, '\0', 1024);
         sm[i].recvbuffer_out = (sm[i].recvbuffer_out+1)%5;
     }
 

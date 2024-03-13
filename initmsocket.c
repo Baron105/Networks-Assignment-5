@@ -26,8 +26,39 @@ void* S();
 struct sembuf sem_lock = {0, -1, 0};
 struct sembuf sem_unlock = {0, 1, 0};
 
+void signal_handler(int signum)
+{
+    if(signum == SIGINT)
+    {
+        // delete the shared memory and semaphores
+        key_t key = ftok("SM",2);
+        int sm_id = shmget(key, sizeof(SM)*25, 0666);
+        shmctl(sm_id, IPC_RMID, NULL);
+
+        key_t sem_key = ftok("SM",1);
+        int sem_id = semget(sem_key, 1, 0666);
+        semctl(sem_id, 0, IPC_RMID, 0);
+
+        key_t sockinfo = ftok("SM",3);
+        int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666);
+        shmctl(sockinfo_id, IPC_RMID, NULL);
+
+        key_t sem_key1 = ftok("SM",4);
+        int sem_id1 = semget(sem_key1, 1, 0666);
+        semctl(sem_id1, 0, IPC_RMID, 0);
+
+        key_t sem_key2 = ftok("SM",5);
+        int sem_id2 = semget(sem_key2, 1, 0666);
+        semctl(sem_id2, 0, IPC_RMID, 0);
+
+        printf("Shared memory and semaphores deleted\n");
+        exit(0);
+    }
+}
+
 int main()
 {
+    signal(SIGINT,signal_handler);
     // make semaphore for the shared memory
     key_t sem_key = ftok("SM",1);
     int sem_id = semget(sem_key, 1, IPC_CREAT | 0666);

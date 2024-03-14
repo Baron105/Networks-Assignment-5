@@ -2,5 +2,55 @@ List of data structures and functions used in initmsocket.c, msocket.c, and msoc
 
 Data structures
 
-1. SOCK_INFO
+1. SOCK_INFO            // structure to hold socket and bind calls information
+
+typedef struct
+{
+    int sock_id;        // socket id for socket
+    long ip;            // ip address for bind
+    int port;           // port number for bind
+    int errnum;         // error number set if error occurs
+} SOCK_INFO;
+
+2. SM                   // the shared memory structure
+
+typedef struct
+{
+    int alloted;        // flag to check if shared memory is alloted(1) or free(0)
+    pid_t pid;          // process id of the process that alloted the shared memory
+    int mtp_id;         // mtp socket id
+    int udp_id;         // udp socket id
+    long ip;            // ip address of the port
+    int port;           // port number
+    msg sendbuffer[10]; // send buffer with 10 msg slots, msg is a structure to store char[1024]
+    int last_seq;       // last sequence number put in the send buffer
+    int sendbuffer_in;  // index to put the next message in the send buffer, by the application
+    int sendbuffer_out; // index to get the next message from the send buffer, by the thread
+    msg recvbuffer[5];  // receive buffer with 5 msg slots, msg is a structure to store char[1024]
+    int recvbuffer_in;  // index to put the next message in the receive buffer, by the thread
+    int recvbuffer_out; // index to get the next message from the receive buffer, by the application
+    window swnd;        // send window
+    window rwnd;        // receive window
+    int nospace;        // flag to indicate that there is no space in the receive buffer
+    int flag;           // flag to indicate that the receive buffer was full, but now m_recvfrom has created some space
+} SM;
+
+3. msg                  // structure to store char[1024]
+
+typedef struct
+{
+    char text[1024];    // message to be sent or received
+} msg;
+
+4. window               // structure to store window information
+
+typedef struct
+{
+    int window_size;    // useful for the sender to know how much space is there in receiver buffer
+    int array[15];      // array to store the postion of the buffers wrt the 
+    int left;           // 
+    int middle;
+    int right;
+} window;
+
 

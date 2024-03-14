@@ -310,7 +310,7 @@ int m_recvfrom(int sock, char *buf, int len, int flags, long s_ip, int s_port)
             V(sem_id);
             return -1;
         }
-        if(sm[i].nospace == 1)
+        if (sm[i].nospace == 1)
         {
             sm[i].nospace = 0;
             sm[i].flag = 1;
@@ -331,7 +331,7 @@ int m_recvfrom(int sock, char *buf, int len, int flags, long s_ip, int s_port)
             V(sem_id);
             return -1;
         }
-        if(sm[i].nospace == 1)
+        if (sm[i].nospace == 1)
         {
             sm[i].nospace = 0;
             sm[i].flag = 1;

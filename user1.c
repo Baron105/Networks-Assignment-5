@@ -3,7 +3,7 @@
 int main()
 {
     int s = m_socket(AF_INET, SOCK_DGRAM, 0);
-    if(s<0)
+    if (s < 0)
     {
         perror("socket error\n");
         return -1;
@@ -17,7 +17,7 @@ int main()
     int d_port = 1235;
 
     int ret = m_bind(s, s_ip, s_port, d_ip, d_port);
-    if(ret<0)
+    if (ret < 0)
     {
         perror("bind error\n");
         return -1;
@@ -28,7 +28,7 @@ int main()
     strcpy(buf, "Hello");
 
     ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
-    if(ret<0)
+    if (ret < 0)
     {
         perror("sendto error\n");
         return -1;
@@ -36,7 +36,7 @@ int main()
     printf("message sent\n");
 
     ret = m_close(s);
-    if(ret<0)
+    if (ret < 0)
     {
         perror("close error\n");
         return -1;

@@ -28,7 +28,7 @@ struct sembuf sem_unlock = {0, 1, 0};
 
 void signal_handler(int signum)
 {
-    if(signum == SIGINT)
+    if(signum == SIGINT || signum == SIGTSTP)
     {
         // delete the shared memory and semaphores
         key_t key = ftok("SM",2);

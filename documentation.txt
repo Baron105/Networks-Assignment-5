@@ -1,56 +1,75 @@
 List of data structures and functions used in initmsocket.c, msocket.c, and msocket.h
 
-Data structures
+Data structures defined in struct.h (common to initmsocket.c, msocket.c, and msocket.h)
 
-1. SOCK_INFO            // structure to hold socket and bind calls information
+1. SOCK_INFO                // structure to hold socket and bind calls information
 
-typedef struct
-{
-    int sock_id;        // socket id for socket
-    long ip;            // ip address for bind
-    int port;           // port number for bind
-    int errnum;         // error number set if error occurs
-} SOCK_INFO;
+    - int sock_id;          // socket id for socket
+    - long ip;              // ip address for bind
+    - int port;             // port number for bind
+    - int errnum;           // error number set if error occurs
 
-2. SM                   // the shared memory structure
 
-typedef struct
-{
-    int alloted;        // flag to check if shared memory is alloted(1) or free(0)
-    pid_t pid;          // process id of the process that alloted the shared memory
-    int mtp_id;         // mtp socket id
-    int udp_id;         // udp socket id
-    long ip;            // ip address of the port
-    int port;           // port number
-    msg sendbuffer[10]; // send buffer with 10 msg slots, msg is a structure to store char[1024]
-    int last_seq;       // last sequence number put in the send buffer
-    int sendbuffer_in;  // index to put the next message in the send buffer, by the application
-    int sendbuffer_out; // index to get the next message from the send buffer, by the thread
-    msg recvbuffer[5];  // receive buffer with 5 msg slots, msg is a structure to store char[1024]
-    int recvbuffer_in;  // index to put the next message in the receive buffer, by the thread
-    int recvbuffer_out; // index to get the next message from the receive buffer, by the application
-    window swnd;        // send window
-    window rwnd;        // receive window
-    int nospace;        // flag to indicate that there is no space in the receive buffer
-    int flag;           // flag to indicate that the receive buffer was full, but now m_recvfrom has created some space
-} SM;
+2. SM                       // the shared memory structure
 
-3. msg                  // structure to store char[1024]
+    - int alloted;          // flag to check if shared memory is alloted(1) or free(0)
+    - pid_t pid;            // process id of the process that alloted the shared memory
+    - int mtp_id;           // mtp socket id
+    - int udp_id;           // udp socket id
+    - long ip;              // ip address of the port
+    - int port;             // port number
+    - msg sendbuffer[10];   // send buffer with 10 msg slots, msg is a structure to store char[1024]
+    - int last_seq;         // last sequence number put in the send buffer
+    - int sendbuffer_in;    // index to put the next message in the send buffer, by the application
+    - int sendbuffer_out;   // index to get the next message from the send buffer, by the thread
+    - msg recvbuffer[5];    // receive buffer with 5 msg slots, msg is a structure to store char[1024]
+    - int recvbuffer_in;    // index to put the next message in the receive buffer, by the thread
+    - int recvbuffer_out;   // index to get the next message from the receive buffer, by the application
+    - window swnd;          // send window
+    - window rwnd;          // receive window
+    - int nospace;          // flag to indicate that there is no space in the receive buffer
+    - int flag;             // flag to indicate that the receive buffer was full, but now m_recvfrom has created some space
 
-typedef struct
-{
-    char text[1024];    // message to be sent or received
-} msg;
 
-4. window               // structure to store window information
+3. msg                      // structure to store char[1024]
 
-typedef struct
-{
-    int window_size;    // useful for the sender to know how much space is there in receiver buffer
-    int array[15];      // array to store the postion of the buffers wrt the 
-    int left;           // 
-    int middle;
-    int right;
-} window;
+    - char text[1024];      // message to be sent or received
+
+
+4. window                   // structure to store window information
+
+    - int window_size;      // useful for the sender to know how much space is there in receiver buffer
+    - int array[15];        // array to store the postion of the buffers wrt the 
+    - int left;             // left pointer of the window
+    - int middle;           // middle pointer of the window
+    - int right;            // right pointer of the window
+
+Structures defined in initmsocket.c
+
+1. int new_bind[25]         // array to store if the socket is newly bound, so that the R thread can add it to fd_set
+
+2. time_t last_msg[25][15]  // array to store the time of the message sent, to detect timeout and retransmit
+
+3. char header[8]           // char array to store the header of the message, which contains the sequence number and the type of the message
+
+4. char message[1024]       // char array to store the actual data message received
+
+5. struct sockaddr_in server// structure to store the server address
+
+    - sin_family            // address family
+    - sin_port              // port number
+    - sin_addr              // ip address in s_addr
+
+6. char ackm[8]             // char array to store the ack message to be sent
+
+List of functions implemented in msocket.c
+
+1. int m_socket(int domain, int type, int protocol)
+// creates an mtp socket and returns the mtp socket id
+// takes in the domain, type, and protocol of the udp socket to be created
+// initializes the shared memory and the send and receive buffers
+
+2. int m_bind(int sock, long s_ip, int s_port, long d_ip, int d_port)
+
 
 

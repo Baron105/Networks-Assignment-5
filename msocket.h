@@ -18,20 +18,16 @@
 #define T 5
 #define P_val 0.05
 
-
 #define P(s) semop(s, &sem_lock, 1)
 #define V(s) semop(s, &sem_unlock, 1)
 
 struct sembuf sem_lock = {0, -1, 0};
 struct sembuf sem_unlock = {0, 1, 0};
 
-
-
-
 int m_socket(int domain, int type, int protocol);
-int m_bind(int sock,long s_ip,int s_port,long d_ip,int d_port);
-int m_sendto(int sock,char *buf,int len,int flags,long d_ip,int d_port);
-int m_recvfrom(int sock,char *buf,int len,int flags,long s_ip,int s_port);
+int m_bind(int sock, long s_ip, int s_port, long d_ip, int d_port);
+int m_sendto(int sock, char *buf, int len, int flags, long d_ip, int d_port);
+int m_recvfrom(int sock, char *buf, int len, int flags, long s_ip, int s_port);
 int m_close(int sock);
 
 int dropMessage(float p);

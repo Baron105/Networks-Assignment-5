@@ -1,0 +1,6 @@
+List of data structures and functions used in initmsocket.c, msocket.c, and msocket.h
+
+Data structures
+
+1. SOCK_INFO
+

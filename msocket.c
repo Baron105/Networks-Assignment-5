@@ -310,10 +310,17 @@ int m_recvfrom(int sock, char *buf, int len, int flags, long s_ip, int s_port)
             V(sem_id);
             return -1;
         }
+        if(sm[i].nospace == 1)
+        {
+            sm[i].nospace = 0;
+            sm[i].flag = 1;
+        }
         strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
         memset(sm[i].recvbuffer[sm[i].recvbuffer_out].text, '\0', 1024);
         sm[i].recvbuffer_in = -1;
         sm[i].recvbuffer_out = -1;
+        sm[i].rwnd.left = (sm[i].rwnd.left + 1) % 15;
+        sm[i].rwnd.right = (sm[i].rwnd.right + 1) % 15;
     }
     else
     {
@@ -324,9 +331,16 @@ int m_recvfrom(int sock, char *buf, int len, int flags, long s_ip, int s_port)
             V(sem_id);
             return -1;
         }
+        if(sm[i].nospace == 1)
+        {
+            sm[i].nospace = 0;
+            sm[i].flag = 1;
+        }
         strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
         memset(sm[i].recvbuffer[sm[i].recvbuffer_out].text, '\0', 1024);
         sm[i].recvbuffer_out = (sm[i].recvbuffer_out + 1) % 5;
+        sm[i].rwnd.left = (sm[i].rwnd.left + 1) % 15;
+        sm[i].rwnd.right = (sm[i].rwnd.right + 1) % 15;
     }
 
     V(sem_id);
@@ -379,6 +393,8 @@ int m_close(int sock)
             return -1;
         }
     }
+
+    // set the new bind value to 3
 
     memset(&sm[i], 0, sizeof(SM));
 

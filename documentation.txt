@@ -68,8 +68,65 @@ List of functions implemented in msocket.c
 // creates an mtp socket and returns the mtp socket id
 // takes in the domain, type, and protocol of the udp socket to be created
 // initializes the shared memory and the send and receive buffers
+// if error occurs, set the error number
 
 2. int m_bind(int sock, long s_ip, int s_port, long d_ip, int d_port)
+// binds the mtp socket
+// first find whether the socket is created or not
+// pass the source ip, source port and udp id so that the initmsocket can bind the udp socket
+// add the respective entries of the socket in the shared memory
+// if error occurs, set the error number
 
+3. int m_sendto(int sock, char *buf, int len, int flags, long d_ip, int d_port)
+// adds the message to the send buffer
+// check the socket id, if it is not created, set the error number
+// first check if the destination ip and port are valid, else return with error ENOTBOUND
+// if the send buffer is full, immediately return with error set as ENOBUFS
+// put the message in the send buffer and update the sendbuffer_in index appropriately
 
+4. int m_recvfrom(int sock, char *buf, int len, int flags, long s_ip, int s_port)
+// gets the message from the receive buffer
+// check the socket id, if it is not created, set the error number
+// first check if the source ip and port are valid, else return with error ENOTBOUND
+// if the receive buffer is empty, immediately return with error set as ENOMSG
+// get the message from the receive buffer and update the receivebuffer_out index appropriately
 
+5. int m_close(int sock)
+// closes the mtp socket
+// check the socket id, if it is not created, set the error number
+// free the shared memory and the send and receive buffers
+
+6. int dropMessage(float p)
+// drops the message with probability p
+// returns 1 if the message is to be dropped, else returns 0
+
+List of functions implemented in initmsocket.c
+
+1. void removeall()
+// removes all the shared memory and the semaphores
+// done before the R thread, S thread, or the main thread exit
+
+2. void signal_handler(int signum)
+// signal handler for SIGINT and SIGTSTP
+// calls removeall to remove all the shared memory and the semaphores
+
+3. void *R(void)
+// the receiver thread
+// receives the message from the udp socket and puts it in the receive buffer
+// receives the ack message from the udp socket and updates the send window as well
+// sends the ack message to the sender
+
+4. void *S(void)
+// the sender thread
+// periodically checks the send window and retransmits the message if timeout occurs
+// else sends the new message from the send buffer
+
+5. void *G(void)
+// the garbage collector thread
+// checks the shared memory and removes the entries of the sockets that are not alloted
+
+6. int main()
+// the main function of the initmsocket
+// creates the shared memory and the semaphores
+// creates the receiver, sender, and garbage collector threads
+// makes the udp socket and binds it to the port after being signalled by the m_socket and m_bind functions

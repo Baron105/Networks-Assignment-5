@@ -3,11 +3,11 @@
 int m_socket(int domain, int type, int protocol)
 {
     // get the semaphore for the shared memory
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666);
 
     // get the shared memory
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
 
     // attach the shared memory to the process
@@ -37,16 +37,16 @@ int m_socket(int domain, int type, int protocol)
 
     // create a udp socket
     // shmget sem1 sem2
-    key_t sockinfo = ftok("SM", 3);
+    key_t sockinfo = ftok("initmsocket.c", 3);
     int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666);
 
     // attach the shared memory to the process
     SOCK_INFO *si = (SOCK_INFO *)shmat(sockinfo_id, NULL, 0);
 
     // get the semaphore for the shared memory
-    key_t sem_key1 = ftok("SM", 4);
+    key_t sem_key1 = ftok("initmsocket.c", 4);
     int sem_id1 = semget(sem_key1, 1, 0666);
-    key_t sem_key2 = ftok("SM", 5);
+    key_t sem_key2 = ftok("initmsocket.c", 5);
     int sem_id2 = semget(sem_key2, 1, 0666);
 
     V(sem_id1);
@@ -103,11 +103,11 @@ int m_socket(int domain, int type, int protocol)
 int m_bind(int sock, long s_ip, int s_port, long d_ip, int d_port)
 {
     // get the semaphore for the shared memory
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666);
 
     // get the shared memory
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
 
     // attach the shared memory to the process
@@ -133,16 +133,16 @@ int m_bind(int sock, long s_ip, int s_port, long d_ip, int d_port)
     }
 
     // get the shared memory of sockinfo
-    key_t sockinfo = ftok("SM", 3);
+    key_t sockinfo = ftok("initmsocket.c", 3);
     int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666);
 
     // attach the shared memory to the process
     SOCK_INFO *si = (SOCK_INFO *)shmat(sockinfo_id, NULL, 0);
 
     // get the semaphore for the shared memory
-    key_t sem_key1 = ftok("SM", 4);
+    key_t sem_key1 = ftok("initmsocket.c", 4);
     int sem_id1 = semget(sem_key1, 1, 0666);
-    key_t sem_key2 = ftok("SM", 5);
+    key_t sem_key2 = ftok("initmsocket.c", 5);
     int sem_id2 = semget(sem_key2, 1, 0666);
 
     si->ip = s_ip;
@@ -176,11 +176,11 @@ int m_bind(int sock, long s_ip, int s_port, long d_ip, int d_port)
 int m_sendto(int sock, char *buf, int len, int flags, long d_ip, int d_port)
 {
     // get the semaphore for the shared memory
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666);
 
     // get the shared memory
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
 
     // attach the shared memory to the process
@@ -255,11 +255,11 @@ int m_sendto(int sock, char *buf, int len, int flags, long d_ip, int d_port)
 int m_recvfrom(int sock, char *buf, int len, int flags, long s_ip, int s_port)
 {
     // get the semaphore for the shared memory
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666);
 
     // get the shared memory
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
 
     // attach the shared memory to the process
@@ -354,11 +354,11 @@ int m_recvfrom(int sock, char *buf, int len, int flags, long s_ip, int s_port)
 int m_close(int sock)
 {
     // get the semaphore for the shared memory
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666);
 
     // get the shared memory
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
 
     // attach the shared memory to the process
@@ -383,18 +383,7 @@ int m_close(int sock)
         return -1;
     }
 
-    // close the udp socket
-    if (sm[i].udp_id != 0)
-    {
-        if (close(sm[i].udp_id) < 0)
-        {
-            perror("close error\n");
-            V(sem_id);
-            return -1;
-        }
-    }
 
-    // set the new bind value to 3
 
     memset(&sm[i], 0, sizeof(SM));
 

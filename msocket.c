@@ -1,5 +1,8 @@
 #include "msocket.h"
 
+struct sembuf sem_lock = {0, -1, 0};
+struct sembuf sem_unlock = {0, 1, 0};
+
 int m_socket(int domain, int type, int protocol)
 {
     // get the semaphore for the shared memory

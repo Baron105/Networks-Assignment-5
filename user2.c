@@ -13,7 +13,7 @@ int main()
 
     long s_ip = htonl(INADDR_ANY);
     int s_port = 1235;
-    long d_ip = inet_addr("127.0.0.");
+    long d_ip = inet_addr("127.0.0.1");
     int d_port = 1234;
 
     int ret = m_bind(s, s_ip, s_port, d_ip, d_port);

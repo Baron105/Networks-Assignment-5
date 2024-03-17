@@ -1,4 +1,4 @@
-typedef struct
+typedef struct SOCK_INFO
 {
     int sock_id;
     long ip;
@@ -6,12 +6,12 @@ typedef struct
     int errnum;
 } SOCK_INFO;
 
-typedef struct
+typedef struct msg
 {
     char text[1024];
 } msg;
 
-typedef struct
+typedef struct window
 {
     int window_size; // useful for the sender to know how much space is there in receiver buffer
     int array[15];
@@ -20,7 +20,7 @@ typedef struct
     int right;
 } window;
 
-typedef struct
+typedef struct SM
 {
     int alloted;
     pid_t pid;

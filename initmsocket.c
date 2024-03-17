@@ -58,7 +58,7 @@ void signal_handler(int signum)
 {
     if (signum == SIGINT || signum == SIGTSTP)
     {
-        removeall();
+        // removeall();
         exit(0);
     }
 }
@@ -240,7 +240,7 @@ void *S()
                         if (n == -1)
                         {
                             perror("Error in sending the message\n");
-                            removeall();
+                            // removeall();
                             pthread_exit(NULL);
                         }
 
@@ -308,7 +308,7 @@ void *S()
                     if (n == -1)
                     {
                         perror("Error in sending the message\n");
-                        removeall();
+                        // removeall();
                         pthread_exit(NULL);
                     }
 
@@ -357,7 +357,7 @@ void *R()
         if (n == -1)
         {
             perror("Error in select\n");
-            removeall();
+            // removeall();
             pthread_exit(NULL);
         }
 
@@ -412,7 +412,7 @@ void *R()
                         if (n == -1)
                         {
                             perror("Error in sending the ack\n");
-                            removeall();
+                            // removeall();
                             pthread_exit(NULL);
                         }
                         if (sm[i].flag == 1)
@@ -455,7 +455,7 @@ void *R()
                     if (n == -1)
                     {
                         perror("Error in receiving the message\n");
-                        removeall();
+                        // removeall();
                         pthread_exit(NULL);
                     }
 
@@ -523,7 +523,7 @@ void *R()
                                     if (n == -1)
                                     {
                                         perror("Error in sending the ack\n");
-                                        removeall();
+                                        // removeall();
                                         pthread_exit(NULL);
                                     }
                                 }

@@ -31,23 +31,23 @@ int new_bind[25] = {0}; // used to check if the socket is newly binding , taken 
 void removeall()
 {
     // delete the shared memory and semaphores
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
     shmctl(sm_id, IPC_RMID, NULL);
 
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666);
     semctl(sem_id, 0, IPC_RMID, 0);
 
-    key_t sockinfo = ftok("SM", 3);
+    key_t sockinfo = ftok("initmsocket.c", 3);
     int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666);
     shmctl(sockinfo_id, IPC_RMID, NULL);
 
-    key_t sem_key1 = ftok("SM", 4);
+    key_t sem_key1 = ftok("initmsocket.c", 4);
     int sem_id1 = semget(sem_key1, 1, 0666);
     semctl(sem_id1, 0, IPC_RMID, 0);
 
-    key_t sem_key2 = ftok("SM", 5);
+    key_t sem_key2 = ftok("initmsocket.c", 5);
     int sem_id2 = semget(sem_key2, 1, 0666);
     semctl(sem_id2, 0, IPC_RMID, 0);
 
@@ -67,14 +67,14 @@ int main()
 {
     signal(SIGINT, signal_handler);
     // make semaphore for the shared memory
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, IPC_CREAT | 0666);
 
     // initialise the semaphore
     semctl(sem_id, 0, SETVAL, 1);
 
     // create a shared memory for SM
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, IPC_CREAT | 0666);
     if (sm_id == -1)
     {
@@ -91,7 +91,7 @@ int main()
     pthread_create(&s, NULL, S, NULL);
 
     // making the SOCKINFO shared memory and sem1 and sem2
-    key_t sockinfo = ftok("SM", 3);
+    key_t sockinfo = ftok("initmsocket.c", 3);
     int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), IPC_CREAT | 0666);
 
     // attach the shared memory to the process and initialse the SM to 0
@@ -99,9 +99,9 @@ int main()
     memset(si, 0, sizeof(SOCK_INFO));
 
     // make semaphore for the shared memory
-    key_t sem_key1 = ftok("SM", 4);
+    key_t sem_key1 = ftok("initmsocket.c", 4);
     int sem_id1 = semget(sem_key1, 1, IPC_CREAT | 0666);
-    key_t sem_key2 = ftok("SM", 5);
+    key_t sem_key2 = ftok("initmsocket.c", 5);
     int sem_id2 = semget(sem_key2, 1, IPC_CREAT | 0666);
 
     // initialise the semaphore
@@ -182,11 +182,11 @@ void *S()
     memset(last_msg, -1, sizeof(last_msg));
 
     // make semaphore for the shared memory
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666);
 
     // get the shared memory
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
 
     // attach the shared memory to the process
@@ -265,7 +265,15 @@ void *S()
             }
 
             // update right value
-            int temp = min(sm[i].swnd.middle + sm[i].swnd.window_size, sm[i].last_seq + 1);
+            int temp ;
+            if(sm[i].swnd.middle + sm[i].swnd.window_size < sm[i].last_seq + 1)
+            {
+                temp = sm[i].swnd.middle + sm[i].swnd.window_size;
+            }
+            else 
+            {
+                temp = sm[i].last_seq + 1;
+            }
 
             while (sm[i].swnd.right != temp)
             {
@@ -319,11 +327,11 @@ void *S()
 void *R()
 {
     // make semaphore for the shared memory
-    key_t sem_key = ftok("SM", 1);
+    key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666);
 
     // get the shared memory
-    key_t key = ftok("SM", 2);
+    key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
 
     // attach the shared memory to the process
@@ -433,7 +441,7 @@ void *R()
 
                     char header[8];
                     struct sockaddr_in server;
-                    int len = sizeof(server);
+                    socklen_t len = sizeof(server);
                     int n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
 
                     if (server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port)
@@ -543,7 +551,7 @@ void *R()
                         memset(header, '\0', 8);
                         n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
                         // bad guy check
-                        while (n > 0 && server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port)
+                        while (n > 0 && (server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port))
                         {
                             // not the correct socket
                             printf("Not the correct socket\n");

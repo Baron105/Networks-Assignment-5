@@ -1,6 +1,8 @@
 CC = gcc
 CFLAGS = -Wall
 
+all: libmsocket.a initmsocket user1 user2
+
 libmsocket.a: msocket.o
 	ar rcs libmsocket.a msocket.o
 
@@ -8,10 +10,10 @@ initmsocket: initmsocket.o
 	$(CC) $(CFLAGS) -o initmsocket initmsocket.o -lpthread
 
 user1: user1.c libmsocket.a
-	$(CC) $(CFLAGS) -o user1 user1.c -lmsocket -L.
+	$(CC) $(CFLAGS) -o user1 user1.c -L. -lmsocket -lpthread
 
 user2: user2.c libmsocket.a
-	$(CC) $(CFLAGS) -o user2 user2.c -lmsocket -L.
+	$(CC) $(CFLAGS) -o user2 user2.c -L. -lmsocket -lpthread
 
 msocket.o: msocket.c msocket.h
 	$(CC) $(CFLAGS) -c msocket.c

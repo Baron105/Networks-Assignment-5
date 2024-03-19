@@ -11,10 +11,10 @@ int main()
     printf("socket created\n");
     printf("socket id = %d\n", s);
 
-    long s_ip = htonl(INADDR_ANY);
-    int s_port = 1234;
+    long s_ip = inet_addr("127.0.0.1");
+    int s_port = htons(1234);
     long d_ip = inet_addr("127.0.0.1");
-    int d_port = 1235;
+    int d_port = htons(1235);
 
     int ret = m_bind(s, s_ip, s_port, d_ip, d_port);
     if (ret < 0)
@@ -22,10 +22,14 @@ int main()
         perror("bind error\n");
         return -1;
     }
-    printf("bind successful\n");
+    printf("bind successful with s_ip = %ld, s_port = %d\n", s_ip, s_port);
+
+
+    sleep(6);
 
     char buf[1024];
     strcpy(buf, "Hello");
+
 
     ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
     if (ret < 0)
@@ -34,6 +38,21 @@ int main()
         return -1;
     }
     printf("message sent\n");
+
+    sleep(8);
+
+    memset(buf, 0, sizeof(buf));
+    strcpy(buf, "Hello2");
+
+    ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
+    if (ret < 0)
+    {
+        perror("sendto error\n");
+        return -1;
+    }
+    printf("message sent\n");
+
+    sleep(8);
 
     ret = m_close(s);
     if (ret < 0)

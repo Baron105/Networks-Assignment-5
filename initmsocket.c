@@ -26,32 +26,32 @@ void *S();
 struct sembuf sem_lock = {0, -1, 0};
 struct sembuf sem_unlock = {0, 1, 0};
 
-int new_bind[25] = {0}; // used to check if the socket is newly binding , taken care of by the R thread on timeout to add new socket to the fd set
+int new_bind[25]; // used to check if the socket is newly binding , taken care of by the R thread on timeout to add new socket to the fd set
 
 void removeall()
 {
-    // delete the shared memory and semaphores
-    key_t key = ftok("initmsocket.c", 2);
-    int sm_id = shmget(key, sizeof(SM) * 25, 0666);
-    shmctl(sm_id, IPC_RMID, NULL);
+    // // delete the shared memory and semaphores
+    // key_t key = ftok("initmsocket.c", 2);
+    // int sm_id = shmget(key, sizeof(SM) * 25, 0666);
+    // shmctl(sm_id, IPC_RMID, NULL);
 
-    key_t sem_key = ftok("initmsocket.c", 1);
-    int sem_id = semget(sem_key, 1, 0666);
-    semctl(sem_id, 0, IPC_RMID, 0);
+    // key_t sem_key = ftok("initmsocket.c", 1);
+    // int sem_id = semget(sem_key, 1, 0666);
+    // semctl(sem_id, 0, IPC_RMID, 0);
 
-    key_t sockinfo = ftok("initmsocket.c", 3);
-    int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666);
-    shmctl(sockinfo_id, IPC_RMID, NULL);
+    // key_t sockinfo = ftok("initmsocket.c", 3);
+    // int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666);
+    // shmctl(sockinfo_id, IPC_RMID, NULL);
 
-    key_t sem_key1 = ftok("initmsocket.c", 4);
-    int sem_id1 = semget(sem_key1, 1, 0666);
-    semctl(sem_id1, 0, IPC_RMID, 0);
+    // key_t sem_key1 = ftok("initmsocket.c", 4);
+    // int sem_id1 = semget(sem_key1, 1, 0666);
+    // semctl(sem_id1, 0, IPC_RMID, 0);
 
-    key_t sem_key2 = ftok("initmsocket.c", 5);
-    int sem_id2 = semget(sem_key2, 1, 0666);
-    semctl(sem_id2, 0, IPC_RMID, 0);
+    // key_t sem_key2 = ftok("initmsocket.c", 5);
+    // int sem_id2 = semget(sem_key2, 1, 0666);
+    // semctl(sem_id2, 0, IPC_RMID, 0);
 
-    printf("Shared memory and semaphores deleted\n");
+    // printf("Shared memory and semaphores deleted\n");
 }
 
 void signal_handler(int signum)
@@ -86,6 +86,7 @@ int main()
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
 
     memset(sm, 0, sizeof(SM) * 25);
+    memset(new_bind, 0, sizeof(new_bind));
     pthread_t r, s;
     pthread_create(&r, NULL, R, NULL);
     pthread_create(&s, NULL, S, NULL);
@@ -136,6 +137,7 @@ int main()
         {
             // it is a socket call
             // create a udp socket
+            printf("Creating a socket\n");
             si->sock_id = socket(AF_INET, SOCK_DGRAM, 0);
             if (si->sock_id == -1)
             {
@@ -167,6 +169,8 @@ int main()
                 new_bind[i] = 1;
             }
         }
+        else 
+            printf("si->sock_id = %d, si->ip = %ld, si->port = %d\n", si->sock_id, si->ip, si->port);
         V(sem_id2);
     }
 }
@@ -194,24 +198,26 @@ void *S()
 
     while (1)
     {
-        sleep(T / 2);
+        sleep(T/2 - 1);
         P(sem_id);
         time_t now = time(NULL);
 
         // checking if there are any messages that require retranmission
         for (int i = 0; i < 25; i++)
         {
-            if (sm[i].alloted == 1)
+            if (sm[i].alloted == 1 && sm[i].udp_id != 0)
             {
                 struct sockaddr_in server;
                 server.sin_family = AF_INET;
-                server.sin_port = htons(sm[i].port);
+                server.sin_port = sm[i].port;
                 server.sin_addr.s_addr = sm[i].ip;
                 // find the time difference
                 time_t diff;
 
                 for (int j = sm[i].swnd.middle; j < sm[i].swnd.right; j++)
                 {
+                    if(j==-1)
+                        continue;
                     diff = difftime(now, last_msg[i][j]);
                     if (diff > T)
                     {
@@ -235,6 +241,8 @@ void *S()
                             message[k + 8] = '0';
 
                         // send the message
+                        // printf("RESENDING MESSAGE\n");
+                        // printf("%d %d\n",sm[i].swnd.middle, sm[i].swnd.right);
                         int n = sendto(sm[i].udp_id, message, 1032, 0, (struct sockaddr *)&server, sizeof(server));
 
                         if (n == -1)
@@ -282,7 +290,7 @@ void *S()
                     // send this message for the first time
                     struct sockaddr_in server;
                     server.sin_family = AF_INET;
-                    server.sin_port = htons(sm[i].port);
+                    server.sin_port = sm[i].port;
                     server.sin_addr.s_addr = sm[i].ip;
 
                     char message[1032];
@@ -300,9 +308,10 @@ void *S()
                     strcat(message, sm[i].sendbuffer[sm[i].swnd.right].text);
                     // padding the message
                     for (int k = strlen(sm[i].sendbuffer[sm[i].swnd.right].text); k < 1024; k++)
-                        message[k + 8] = '0';
+                        message[k + 8] = '\0';
 
                     // send the message
+                    printf("Sending msg %s to server.sin_port = %d, server.sin_addr.s_addr = %ld\n", message, server.sin_port, server.sin_addr.s_addr);
                     int n = sendto(sm[i].udp_id, message, 1032, 0, (struct sockaddr *)&server, sizeof(server));
 
                     if (n == -1)
@@ -315,6 +324,7 @@ void *S()
                     last_msg[i][sm[i].swnd.right] = time(NULL);
                 }
                 sm[i].swnd.right = (sm[i].swnd.right + 1) % 15;
+
             }
         }
         V(sem_id);
@@ -338,30 +348,31 @@ void *R()
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
 
     fd_set fd;
-    fd_set readfds;
+
 
     struct timeval tv;
     tv.tv_sec = T;
     tv.tv_usec = 0;
 
-    int timeout_cnt[25] = {0};
+    int timeout_cnt[25] ;
+    memset(timeout_cnt, 0, sizeof(timeout_cnt));
+
 
     FD_ZERO(&fd);
 
     while (1)
     {
-        readfds = fd;
+        fd_set readfds = fd;
 
-        int n = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
-
-        if (n == -1)
+        int f = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
+        if (f == -1)
         {
             perror("Error in select\n");
             removeall();
             pthread_exit(NULL);
         }
 
-        if (n == 0)
+        if (f == 0)
         {
             // timeout
             P(sem_id);
@@ -370,6 +381,7 @@ void *R()
             {
                 if (new_bind[i] == 1)
                 {
+                    printf("Adding socket %d %d to the fd set\n",sm[i].mtp_id,sm[i].udp_id);
                     new_bind[i] = 0;
                     FD_SET(sm[i].udp_id, &fd);
                 }
@@ -404,7 +416,7 @@ void *R()
 
                         struct sockaddr_in server;
                         server.sin_family = AF_INET;
-                        server.sin_port = htons(sm[i].port);
+                        server.sin_port = sm[i].port;
                         server.sin_addr.s_addr = sm[i].ip;
 
                         int n = sendto(sm[i].udp_id, message, 8, 0, (struct sockaddr *)&server, sizeof(server));
@@ -426,7 +438,7 @@ void *R()
             V(sem_id);
             continue;
         }
-
+        printf("SOMETHING IS RECEIVED\n");
         // we have some activity
         for (int i = 0; i < 25; i++)
         {
@@ -447,7 +459,6 @@ void *R()
                     if (server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port)
                     {
                         // not the correct socket
-                        printf("Not the correct socket\n");
                         V(sem_id);
                         continue;
                     }
@@ -463,6 +474,8 @@ void *R()
                     {
                         // we have received a message
                         // check if it is an ack or a data message
+
+                        
                         if (header[0] == '0')
                         {
                             // it is a data message

@@ -26,7 +26,7 @@ typedef struct
     pid_t pid;
     int mtp_id;
     int udp_id;
-    long ip;
+    unsigned long ip;
     int port;
     msg sendbuffer[10];
     int last_seq;

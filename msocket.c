@@ -98,6 +98,8 @@ int m_socket(int domain, int type, int protocol)
 
     sm[i].last_seq = -1;
 
+    memset(sm[i].rwnd.array,-1,15);
+
     V(sem_id);
 
     // detach the shared memory

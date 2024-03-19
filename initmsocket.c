@@ -149,7 +149,7 @@ int main()
             // it is a bind call
             struct sockaddr_in server;
             server.sin_family = AF_INET;
-            server.sin_port = htons(si->port);
+            server.sin_port = si->port;
             server.sin_addr.s_addr = si->ip;
 
             if (bind(si->sock_id, (struct sockaddr *)&server, sizeof(server)) < 0)
@@ -198,7 +198,7 @@ void *S()
 
     while (1)
     {
-        sleep(T/2 - 1);
+        sleep(T/2);
         P(sem_id);
         time_t now = time(NULL);
 
@@ -238,7 +238,7 @@ void *S()
                         strcat(message, sm[i].sendbuffer[j].text);
                         // padding the message
                         for (int k = strlen(sm[i].sendbuffer[j].text); k < 1024; k++)
-                            message[k + 8] = '0';
+                            message[k + 8] = '\0';
 
                         // send the message
                         // printf("RESENDING MESSAGE\n");
@@ -270,61 +270,64 @@ void *S()
                     sm[i].swnd.left = (sm[i].swnd.left + 1) % 15;
                 }
                 sm[i].sendbuffer_out = sm[i].swnd.middle;
-            }
+            
 
-            // update right value
-            int temp ;
-            if(sm[i].swnd.middle + sm[i].swnd.window_size < sm[i].last_seq + 1)
-            {
-                temp = sm[i].swnd.middle + sm[i].swnd.window_size;
-            }
-            else 
-            {
-                temp = sm[i].last_seq + 1;
-            }
-
-            while (sm[i].swnd.right != temp)
-            {
-                if (sm[i].swnd.right != -1)
+                // update right value
+                int temp ;
+                if((sm[i].swnd.middle + sm[i].swnd.window_size) < (sm[i].last_seq + 1))
                 {
-                    // send this message for the first time
-                    struct sockaddr_in server;
-                    server.sin_family = AF_INET;
-                    server.sin_port = sm[i].port;
-                    server.sin_addr.s_addr = sm[i].ip;
-
-                    char message[1032];
-                    // assigning the header
-                    // since it is a data message
-
-                    message[0] = '0';
-                    message[1] = sm[i].swnd.right / 8 ? '1' : '0';
-                    message[2] = (sm[i].swnd.right % 8) / 4 ? '1' : '0';
-                    message[3] = (sm[i].swnd.right % 4) / 2 ? '1' : '0';
-                    message[4] = (sm[i].swnd.right % 2) ? '1' : '0';
-
-                    message[5] = message[6] = message[7] = '0';
-                    message[8] = '\0';
-                    strcat(message, sm[i].sendbuffer[sm[i].swnd.right].text);
-                    // padding the message
-                    for (int k = strlen(sm[i].sendbuffer[sm[i].swnd.right].text); k < 1024; k++)
-                        message[k + 8] = '\0';
-
-                    // send the message
-                    printf("Sending msg %s to server.sin_port = %d, server.sin_addr.s_addr = %ld\n", message, server.sin_port, server.sin_addr.s_addr);
-                    int n = sendto(sm[i].udp_id, message, 1032, 0, (struct sockaddr *)&server, sizeof(server));
-
-                    if (n == -1)
-                    {
-                        perror("Error in sending the message\n");
-                        removeall();
-                        pthread_exit(NULL);
-                    }
-
-                    last_msg[i][sm[i].swnd.right] = time(NULL);
+                    temp = (sm[i].swnd.middle + sm[i].swnd.window_size)%15;
                 }
-                sm[i].swnd.right = (sm[i].swnd.right + 1) % 15;
+                else 
+                {
+                    temp = (sm[i].last_seq + 1)%15;
+                }
+                if(sm[i].udp_id == 3)
+                printf("temp = %d, swnd.right = %d sm[i].swnd.middle=%d sm[i].swnd.window_size=%d  sm[i].last_seq=%d\n",temp,sm[i].swnd.right,sm[i].swnd.middle,sm[i].swnd.window_size,sm[i].last_seq);
 
+                while (sm[i].swnd.right != temp)
+                {
+                    if (sm[i].swnd.right != -1)
+                    {
+                        // send this message for the first time
+                        struct sockaddr_in server;
+                        server.sin_family = AF_INET;
+                        server.sin_port = sm[i].port;
+                        server.sin_addr.s_addr = sm[i].ip;
+
+                        char message[1032];
+                        // assigning the header
+                        // since it is a data message
+
+                        message[0] = '0';
+                        message[1] = sm[i].swnd.right / 8 ? '1' : '0';
+                        message[2] = (sm[i].swnd.right % 8) / 4 ? '1' : '0';
+                        message[3] = (sm[i].swnd.right % 4) / 2 ? '1' : '0';
+                        message[4] = (sm[i].swnd.right % 2) ? '1' : '0';
+
+                        message[5] = message[6] = message[7] = '0';
+                        message[8] = '\0';
+                        strcat(message, sm[i].sendbuffer[sm[i].swnd.right].text);
+                        // padding the message
+                        for (int k = strlen(sm[i].sendbuffer[sm[i].swnd.right].text); k < 1024; k++)
+                            message[k + 8] = '\0';
+
+                        // send the message
+                        printf("Sending msg %s to server.sin_port = %d, server.sin_addr.s_addr = %u\n", message, server.sin_port, server.sin_addr.s_addr);
+                        int n = sendto(sm[i].udp_id, message, 1032, 0, (struct sockaddr *)&server, sizeof(server));
+
+                        if (n == -1)
+                        {
+                            perror("Error in sending the message\n");
+                            removeall();
+                            pthread_exit(NULL);
+                        }
+
+                        last_msg[i][sm[i].swnd.right] = time(NULL);
+                    }
+                    sm[i].swnd.right = (sm[i].swnd.right + 1) % 15;
+
+                }
             }
         }
         V(sem_id);
@@ -362,7 +365,11 @@ void *R()
 
     while (1)
     {
-        fd_set readfds = fd;
+        // copy fd to readfds
+        fd_set readfds;
+        readfds = fd;
+        
+
 
         int f = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
         if (f == -1)
@@ -438,7 +445,6 @@ void *R()
             V(sem_id);
             continue;
         }
-        printf("SOMETHING IS RECEIVED\n");
         // we have some activity
         for (int i = 0; i < 25; i++)
         {
@@ -451,10 +457,11 @@ void *R()
                     // 1. it is an ack
                     // 2. it is a data message
 
+                    char m[1032];
                     char header[8];
                     struct sockaddr_in server;
                     socklen_t len = sizeof(server);
-                    int n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
+                    int n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT|MSG_PEEK, (struct sockaddr *)&server, &len);
 
                     if (server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port)
                     {
@@ -470,6 +477,8 @@ void *R()
                         pthread_exit(NULL);
                     }
 
+                    printf("header : %s\n", header);
+
                     while (n > 0)
                     {
                         // we have received a message
@@ -480,8 +489,14 @@ void *R()
                         {
                             // it is a data message
                             // recv the data
-                            char message[1024];
-                            n = recvfrom(sm[i].udp_id, message, 1024, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
+                            char message[1032] = {'\0'};
+                            n = recvfrom(sm[i].udp_id, message, 1032, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
+
+                            // drop the first 8 bytes
+                            for (int j = 0; j < 1032; j++)
+                            {
+                                message[j] = message[j + 8];
+                            }
 
                             int seq = (header[1] - '0') * 8 + (header[2] - '0') * 4 + (header[3] - '0') * 2 + (header[4] - '0');
 
@@ -490,6 +505,7 @@ void *R()
                             {
                                 // it is in the window
 
+                                printf("Message : %s %d \n", message,n);
                                 // check if it is a duplicate message
                                 if (sm[i].rwnd.array[seq] == -1)
                                 {
@@ -531,6 +547,7 @@ void *R()
                                     ackm[6] = (rem % 4) / 2 ? '1' : '0';
                                     ackm[7] = (rem % 2) ? '1' : '0';
 
+                                    printf("Sending ack %s\n", ackm);
                                     int n = sendto(sm[i].udp_id, ackm, 8, 0, (struct sockaddr *)&server, sizeof(server));
 
                                     if (n == -1)
@@ -547,6 +564,10 @@ void *R()
                             // it is an ack
                             // it is not a bad guy also
 
+                            memset(header, '\0', 8);
+                            int n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
+
+
                             int seq = (header[1] - '0') * 8 + (header[2] - '0') * 4 + (header[3] - '0') * 2 + (header[4] - '0');
                             int rem = (header[5] - '0') * 4 + (header[6] - '0') * 2 + (header[7] - '0');
 
@@ -558,11 +579,14 @@ void *R()
                                 sm[i].swnd.middle = (seq + 1) % 15;
                             }
 
+                            if(sm[i].udp_id == 3)
+                                printf("Ack : %s rem = %d\n",header,rem);
                             // update the receive window size
                             sm[i].swnd.window_size = rem;
+                            if(sm[i].swnd.window_size == -1)printf("CHECK\n");
                         }
                         memset(header, '\0', 8);
-                        n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
+                        n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT|MSG_PEEK, (struct sockaddr *)&server, &len);
                         // bad guy check
                         while (n > 0 && (server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port))
                         {
@@ -570,17 +594,20 @@ void *R()
                             printf("Not the correct socket\n");
 
                             // receive the message
-                            char message[1024];
+                            char message[1032];
 
                             if (header[0] == '0')
                             {
                                 // data message
-                                n = recvfrom(sm[i].udp_id, message, 1024, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
+                                n = recvfrom(sm[i].udp_id, message, 1032, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
                             }
                             memset(header, '\0', 8);
 
-                            n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
+                            n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT|MSG_PEEK, (struct sockaddr *)&server, &len);
                         }
+
+                        if(n<=0)
+                            break;
                     }
                 }
             }

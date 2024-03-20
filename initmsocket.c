@@ -261,8 +261,11 @@ void *S()
                 // move the left upto middle
                 while (sm[i].swnd.left != sm[i].swnd.middle)
                 { 
-                    if(sm[i].swnd.left!=-1)  
+                    if(sm[i].swnd.left!=-1){
+                        memset(sm[i].sendbuffer[sm[i].swnd.array[sm[i].swnd.left]].text, '\0', 1024);
                         sm[i].swnd.array[sm[i].swnd.left] = -1;
+                    }
+
                     sm[i].swnd.left = (sm[i].swnd.left + 1) % 15;
                 }
                 sm[i].sendbuffer_out = sm[i].swnd.array[sm[i].swnd.middle];
@@ -403,7 +406,7 @@ void *R()
                         int seq = (sm[i].rwnd.middle - 1 + 15) % 15;
                         int rem = (sm[i].rwnd.right - sm[i].rwnd.middle + 15) % 15;
 
-                        char message[8];
+                        char message[9];
 
                         message[0] = '1';
                         message[1] = seq / 8 ? '1' : '0';
@@ -414,6 +417,7 @@ void *R()
                         message[5] = rem / 4 ? '1' : '0';
                         message[6] = (rem % 4) / 2 ? '1' : '0';
                         message[7] = (rem % 2) ? '1' : '0';
+                        message[8] = '\0';
 
                         struct sockaddr_in server;
                         server.sin_family = AF_INET;
@@ -527,7 +531,7 @@ void *R()
                                         sm[i].nospace = 1;
                                     }
 
-                                    char ackm[8];
+                                    char ackm[9];
 
                                     ackm[0] = '1';
                                     ackm[1] = seq / 8 ? '1' : '0';
@@ -538,6 +542,7 @@ void *R()
                                     ackm[5] = rem / 4 ? '1' : '0';
                                     ackm[6] = (rem % 4) / 2 ? '1' : '0';
                                     ackm[7] = (rem % 2) ? '1' : '0';
+                                    ackm[8] = '\0';
 
                                     printf("Sending ack %s\n", ackm);
                                     int n = sendto(sm[i].udp_id, ackm, 8, 0, (struct sockaddr *)&server, sizeof(server));

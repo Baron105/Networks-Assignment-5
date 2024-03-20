@@ -27,28 +27,25 @@ int main()
     sleep(5);
 
     char buf[1024];
-    strcpy(buf, "Hello");
-
-
-    ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
-    if (ret < 0)
+    
+    for (int i = 0; i < 15; i++)
     {
-        perror("sendto error\n");
-        return -1;
+        sprintf(buf, "Hello%2d", i);
+
+        sleep(2);
+
+
+        ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
+        if (ret < 0)
+        {
+            perror("sendto error\n");
+            return -1;
+        }
+        printf("message sent\n");
     }
-    printf("message sent\n");
 
 
     memset(buf, 0, sizeof(buf));
-    strcpy(buf, "Hello2");
-
-    ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
-    if (ret < 0)
-    {
-        perror("sendto error\n");
-        return -1;
-    }
-    printf("message sent\n");
 
     sleep(8);
 

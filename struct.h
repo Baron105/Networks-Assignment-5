@@ -39,4 +39,5 @@ typedef struct
     window rwnd;
     int nospace;
     int flag;
+    int exp_seq;
 } SM;

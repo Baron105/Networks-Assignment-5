@@ -26,7 +26,7 @@ int main()
     printf("bind successful with s_ip = %ld, s_port = %d\n", s_ip, s_port);
 
     char buf[1024];
-    sleep(20);
+    sleep(8);
 
     ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
     if (ret < 0)
@@ -34,11 +34,22 @@ int main()
         perror("recvfrom error");
         return -1;
     }
+    
 
     printf("message received\n");
     printf("message = %s\n", buf);
 
+    ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
+    if (ret < 0)
+    {
+        perror("recvfrom error");
+        return -1;
+    }
     
+
+    printf("message received\n");
+    printf("message = %s\n", buf);
+
 
     ret = m_close(s);
 

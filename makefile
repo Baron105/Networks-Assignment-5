@@ -15,10 +15,10 @@ user1: user1.c libmsocket.a
 user2: user2.c libmsocket.a
 	$(CC) $(CFLAGS) -o user2 user2.c -L. -lmsocket -lpthread
 
-msocket.o: msocket.c msocket.h
+msocket.o: msocket.c msocket.h struct.h
 	$(CC) $(CFLAGS) -c msocket.c
 
-initmsocket.o: initmsocket.c
+initmsocket.o: initmsocket.c struct.h
 	$(CC) $(CFLAGS) -c initmsocket.c
 
 clean:

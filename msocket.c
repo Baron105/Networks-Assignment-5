@@ -93,12 +93,14 @@ int m_socket(int domain, int type, int protocol)
     sm[i].sendbuffer_in = -1;
     sm[i].sendbuffer_out = -1;
 
-    sm[i].recvbuffer_in = -1;
-    sm[i].recvbuffer_out = -1;
+    sm[i].exp_seq = 0;
 
     sm[i].last_seq = -1;
 
-    memset(sm[i].rwnd.array,-1,15);
+    for(int j=0;j<15;j++)
+    {
+        sm[i].rwnd.array[j] = -1;
+    }
 
     V(sem_id);
 
@@ -301,57 +303,29 @@ int m_recvfrom(int sock, char *buf, int len, int flags,unsigned long s_ip, int s
         return -1;
     }
 
-    // check if the recv buffer is empty
-    if (sm[i].recvbuffer_in == -1 && sm[i].recvbuffer_out == -1)
+    // check if there is something to receive inorder
+    // this msg would be in recvbuffer[exp_seq%5]
+
+    if(strncmp(sm[i].recvbuffer[sm[i].exp_seq%5].text, "\0", 1) == 0)
     {
         errno = ENOMSG;
-        perror("Recv buffer empty\n");
+        perror("No message to receive\n");
         V(sem_id);
         return -1;
     }
 
-    if (sm[i].recvbuffer_in == sm[i].recvbuffer_out)
+    memset(buf, '\0', 1024);
+    // copy the message to the buffer
+    strcpy(buf, sm[i].recvbuffer[sm[i].exp_seq%5].text);
+    memset(sm[i].recvbuffer[sm[i].exp_seq%5].text, '\0', 1024);
+    sm[i].exp_seq = (sm[i].exp_seq + 1) % 15;
+    if(sm[i].nospace == 1)
     {
-        if (strncmp(sm[i].recvbuffer[sm[i].recvbuffer_out].text, "\0", 1) == 0)
-        {
-            errno = ENOMSG;
-            perror("Recv buffer empty");
-            V(sem_id);
-            return -1;
-        }
-        if (sm[i].nospace == 1)
-        {
-            sm[i].nospace = 0;
-            sm[i].flag = 1;
-        }
-        strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
-        memset(sm[i].recvbuffer[sm[i].recvbuffer_out].text, '\0', 1024);
-        sm[i].recvbuffer_in = -1;
-        sm[i].recvbuffer_out = -1;
-        sm[i].rwnd.left = (sm[i].rwnd.left + 1) % 15;
-        sm[i].rwnd.right = (sm[i].rwnd.right + 1) % 15;
+        sm[i].nospace = 0;
+        sm[i].flag = 1;
     }
-    else
-    {
-        if (strncmp(sm[i].recvbuffer[sm[i].recvbuffer_out].text, "\0", 1) == 0)
-        {
-            errno = ENOMSG;
-            perror("Recv buffer empty\n");
-            V(sem_id);
-            return -1;
-        }
-        if (sm[i].nospace == 1)
-        {
-            sm[i].nospace = 0;
-            sm[i].flag = 1;
-        }
-        strcpy(buf, sm[i].recvbuffer[sm[i].recvbuffer_out].text);
-        memset(sm[i].recvbuffer[sm[i].recvbuffer_out].text, '\0', 1024);
-        sm[i].recvbuffer_out = (sm[i].recvbuffer_out + 1) % 5;
-        sm[i].rwnd.left = (sm[i].rwnd.left + 1) % 15;
-        sm[i].rwnd.right = (sm[i].rwnd.right + 1) % 15;
-    }
-
+    sm[i].rwnd.left = (sm[i].rwnd.left + 1) % 15;
+    sm[i].rwnd.right = (sm[i].rwnd.right + 1) % 15;
     V(sem_id);
 
     // detach the shared memory

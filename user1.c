@@ -24,8 +24,7 @@ int main()
     }
     printf("bind successful with s_ip = %ld, s_port = %d\n", s_ip, s_port);
 
-
-    sleep(6);
+    sleep(5);
 
     char buf[1024];
     strcpy(buf, "Hello");
@@ -39,7 +38,6 @@ int main()
     }
     printf("message sent\n");
 
-    sleep(8);
 
     memset(buf, 0, sizeof(buf));
     strcpy(buf, "Hello2");

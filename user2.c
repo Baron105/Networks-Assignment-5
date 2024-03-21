@@ -28,15 +28,17 @@ int main()
     char buf[1024];
     sleep(5);
 
-    for (int i = 0; i < 15; i++)
+    for (int i = 0; i < 30; i++)
     {
-        sleep(2);
+        sleep(1);
         ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
-        if (ret < 0)
+        while(ret<0)
         {
+            sleep(1);
+            ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
             perror("recvfrom error");
-            return -1;
         }
+        
         
 
         printf("message received\n");

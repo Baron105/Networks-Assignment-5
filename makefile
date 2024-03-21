@@ -7,8 +7,8 @@ all: libmsocket.a initmsocket user1 user2 user3 user4
 libmsocket.a: msocket.o
 	ar rcs libmsocket.a msocket.o
 
-initmsocket: initmsocket.o
-	$(CC) $(CFLAGS) -o initmsocket initmsocket.o -lpthread
+initmsocket: initmsocket.o msocket.h 
+	$(CC) $(CFLAGS) -o initmsocket initmsocket.o -lpthread 
 
 user1: user1.c libmsocket.a
 	$(CC) $(CFLAGS) -o user1 user1.c -L. -lmsocket -lpthread

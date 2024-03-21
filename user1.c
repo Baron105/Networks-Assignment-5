@@ -28,11 +28,11 @@ int main()
 
     char buf[1024];
     
-    for (int i = 0; i < 15; i++)
+    for (int i = 0; i < 30; i++)
     {
         sprintf(buf, "Hello%2d", i);
 
-        sleep(2);
+        sleep(1);
 
 
         ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);

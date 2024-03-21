@@ -47,7 +47,6 @@ int m_socket(int domain, int type, int protocol)
 
         // set errno to ENOBUFS
         errno = ENOBUFS;
-        perror("No space available in SM\n");
         V(sem_id);
         return -1;
     }
@@ -60,7 +59,6 @@ int m_socket(int domain, int type, int protocol)
     if (si->sock_id == -1)
     {
         errno = si->errnum;
-        perror("socket error\n");
         memset(si, 0, sizeof(SOCK_INFO));
         V(sem_id);
         return -1;
@@ -137,7 +135,6 @@ int m_bind(int sock,unsigned long s_ip, int s_port, unsigned long d_ip, int d_po
     {
         // set errno to EBADF
         errno = EBADF;
-        perror("No such socket\n");
         V(sem_id);
         return -1;
     }
@@ -164,7 +161,6 @@ int m_bind(int sock,unsigned long s_ip, int s_port, unsigned long d_ip, int d_po
     if (si->sock_id == -1)
     {
         errno = si->errnum;
-        perror("bind error\n");
         memset(si, 0, sizeof(SOCK_INFO));
         V(sem_id);
         return -1;
@@ -210,7 +206,6 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
     {
         // set errno to EBADF
         errno = EBADF;
-        perror("No such socket\n");
         V(sem_id);
         return -1;
     }
@@ -236,7 +231,6 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
     if ((sm[i].sendbuffer_in + 1) % 10 == sm[i].sendbuffer_out)
     {
         errno = ENOBUFS;
-        perror("Send buffer full\n");
         V(sem_id);
         return -1;
     }
@@ -247,12 +241,14 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
         sm[i].sendbuffer_in = 0;
         sm[i].sendbuffer_out = 0;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
+        sm[i].swnd.array[sm[i].last_seq] = sm[i].sendbuffer_in;
     }
     else
     {
         sm[i].last_seq = (sm[i].last_seq + 1) % 15;
         sm[i].sendbuffer_in = (sm[i].sendbuffer_in + 1) % 10;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
+        sm[i].swnd.array[sm[i].last_seq] = sm[i].sendbuffer_in;
     }
 
     V(sem_id);
@@ -290,7 +286,6 @@ int m_recvfrom(int sock, char *buf, int len, int flags,unsigned long s_ip, int s
     {
         // set errno to EBADF
         errno = EBADF;
-        perror("No such socket\n");
         V(sem_id);
         return -1;
     }
@@ -306,17 +301,20 @@ int m_recvfrom(int sock, char *buf, int len, int flags,unsigned long s_ip, int s
     // check if there is something to receive inorder
     // this msg would be in recvbuffer[exp_seq%5]
 
-    if(strncmp(sm[i].recvbuffer[sm[i].exp_seq%5].text, "\0", 1) == 0)
+    printf("exp_seq = %d\n", sm[i].exp_seq);
+
+    if(strncmp(sm[i].recvbuffer[sm[i].exp_seq%5].text, "\0\0", 2) == 0)
     {
         errno = ENOMSG;
-        perror("No message to receive\n");
         V(sem_id);
         return -1;
     }
-
-    memset(buf, '\0', 1024);
+    // memset(buf, '\0', 1024);
     // copy the message to the buffer
     strcpy(buf, sm[i].recvbuffer[sm[i].exp_seq%5].text);
+    sm[i].rwnd.array[sm[i].exp_seq] = -1;
+
+
     memset(sm[i].recvbuffer[sm[i].exp_seq%5].text, '\0', 1024);
     sm[i].exp_seq = (sm[i].exp_seq + 1) % 15;
     if(sm[i].nospace == 1)
@@ -361,7 +359,6 @@ int m_close(int sock)
     {
         // set errno to EBADF
         errno = EBADF;
-        perror("No such socket\n");
         V(sem_id);
         return -1;
     }
@@ -380,8 +377,10 @@ int m_close(int sock)
 
 int dropMessage(float p)
 {
+    srand(time(0));
     // generate a random number between 0 and 1, if it is less than p, return 1, else return 0
-    float r = (float)rand() / (float)RAND_MAX;
+    double r = ((double)rand()) / INT_MAX;
+    printf("random number = %lf\n", r);
     if (r < p)
         return 1;
     else

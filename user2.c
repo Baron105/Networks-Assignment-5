@@ -28,15 +28,15 @@ int main()
     char buf[1024];
     sleep(5);
 
-    for (int i = 0; i < 30; i++)
+    for (int i = 0; i < 15; i++)
     {
         sleep(1);
         ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
         while(ret<0)
         {
+            perror("recvfrom error");
             sleep(1);
             ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
-            perror("recvfrom error");
         }
         
         

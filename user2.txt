@@ -1,0 +1,126 @@
+socket created
+socket id = 2
+bind successful with s_ip = 16777343, s_port = 54020
+exp_seq = 0
+recvbuffer[0] = Hello0
+recvbuffer[1] = 
+recvbuffer[2] = 
+recvbuffer[3] = 
+recvbuffer[4] = 
+message received
+message = Hello0
+exp_seq = 1
+recvbuffer[0] = 
+recvbuffer[1] = Hello1
+recvbuffer[2] = Hello2
+recvbuffer[3] = 
+recvbuffer[4] = 
+message received
+message = Hello1
+exp_seq = 2
+recvbuffer[0] = 
+recvbuffer[1] = 
+recvbuffer[2] = Hello2
+recvbuffer[3] = 
+recvbuffer[4] = 
+message received
+message = Hello2
+exp_seq = 3
+recvbuffer[0] = 
+recvbuffer[1] = 
+recvbuffer[2] = 
+recvbuffer[3] = Hello3
+recvbuffer[4] = Hello4
+message received
+message = Hello3
+exp_seq = 4
+recvbuffer[0] = 
+recvbuffer[1] = 
+recvbuffer[2] = 
+recvbuffer[3] = 
+recvbuffer[4] = Hello4
+message received
+message = Hello4
+exp_seq = 5
+recvbuffer[0] = 
+recvbuffer[1] = Hello6
+recvbuffer[2] = 
+recvbuffer[3] = 
+recvbuffer[4] = 
+recvfrom error: No message of desired type
+exp_seq = 5
+recvbuffer[0] = 
+recvbuffer[1] = Hello6
+recvbuffer[2] = 
+recvbuffer[3] = 
+recvbuffer[4] = 
+recvfrom error: No message of desired type
+exp_seq = 5
+recvbuffer[0] = 
+recvbuffer[1] = Hello6
+recvbuffer[2] = Hello7
+recvbuffer[3] = Hello8
+recvbuffer[4] = 
+recvfrom error: No message of desired type
+exp_seq = 5
+recvbuffer[0] = 
+recvbuffer[1] = Hello6
+recvbuffer[2] = Hello7
+recvbuffer[3] = Hello8
+recvbuffer[4] = 
+recvfrom error: No message of desired type
+exp_seq = 5
+recvbuffer[0] = Hello10
+recvbuffer[1] = Hello6
+recvbuffer[2] = Hello7
+recvbuffer[3] = Hello8
+recvbuffer[4] = Hello9
+message received
+message = Hello10
+exp_seq = 6
+recvbuffer[0] = 
+recvbuffer[1] = Hello6
+recvbuffer[2] = Hello7
+recvbuffer[3] = Hello8
+recvbuffer[4] = Hello9
+message received
+message = Hello6
+exp_seq = 7
+recvbuffer[0] = 
+recvbuffer[1] = Hello11
+recvbuffer[2] = Hello12
+recvbuffer[3] = Hello8
+recvbuffer[4] = Hello9
+message received
+message = Hello12
+exp_seq = 8
+recvbuffer[0] = 
+recvbuffer[1] = Hello11
+recvbuffer[2] = 
+recvbuffer[3] = Hello8
+recvbuffer[4] = Hello9
+message received
+message = Hello8
+exp_seq = 9
+recvbuffer[0] = 
+recvbuffer[1] = Hello11
+recvbuffer[2] = Hello7
+recvbuffer[3] = Hello13
+recvbuffer[4] = Hello14
+message received
+message = Hello14
+exp_seq = 10
+recvbuffer[0] = 
+recvbuffer[1] = Hello11
+recvbuffer[2] = Hello7
+recvbuffer[3] = Hello13
+recvbuffer[4] = 
+recvfrom error: No message of desired type
+exp_seq = 10
+recvbuffer[0] = 
+recvbuffer[1] = Hello11
+recvbuffer[2] = Hello7
+recvbuffer[3] = Hello13
+recvbuffer[4] = 
+recvfrom error: No message of desired type
+zsh: segmentation fault  ./user2

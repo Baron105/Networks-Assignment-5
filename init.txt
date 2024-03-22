@@ -1,0 +1,82 @@
+gcc -Wall -c msocket.c
+ar rcs libmsocket.a msocket.o
+gcc -Wall -o user1 user1.c -L. -lmsocket -lpthread
+gcc -Wall -o user2 user2.c -L. -lmsocket -lpthread
+gcc -Wall -o user3 user3.c -L. -lmsocket -lpthread
+gcc -Wall -o user4 user4.c -L. -lmsocket -lpthread
+./initmsocket
+Sending msg 00000000Hello0 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+random number = 0.756586 0.050000
+Sending ack 10000100
+random number = 0.943864 0.050000
+Sending msg 00001000Hello1 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 00010000Hello2 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+random number = 0.520503 0.050000
+Sending ack 10001100
+random number = 0.090260 0.050000
+Sending ack 10010011
+random number = 0.008124 0.050000
+ACK is dropped 10001100
+random number = 0.539198 0.050000
+Sending msg 00011000Hello3 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 00100000Hello4 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+random number = 0.302684 0.050000
+Sending ack 10011100
+random number = 0.208859 0.050000
+Sending ack 10100011
+random number = 0.299443 0.050000
+random number = 0.731186 0.050000
+Sending msg 00101000Hello5 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 00110000Hello6 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+random number = 0.036802 0.050000
+message is dropped Hello5
+random number = 0.538530 0.050000
+Sending ack 10100100
+random number = 0.078262 0.050000
+Sending msg 00111000Hello7 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 01000000Hello8 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+random number = 0.343860 0.050000
+Sending ack 10100011
+random number = 0.258457 0.050000
+Sending ack 10100010
+random number = 0.884984 0.050000
+random number = 0.920251 0.050000
+Sending msg 01001000Hello9 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 01010000Hello10 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+random number = 0.652682 0.050000
+Sending ack 10100001
+random number = 0.630579 0.050000
+Sending ack 10100000
+random number = 0.144222 0.050000
+random number = 0.939134 0.050000
+Resending msg 00101000Hello5 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Resending msg 00110000Hello6 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 01011000Hello11 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 01100000Hello12 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+random number = 0.027483 0.050000
+message is dropped Hello5
+random number = 0.910756 0.050000
+Sending ack 10100010
+random number = 0.080190 0.050000
+Sending ack 10100001
+random number = 0.750492 0.050000
+Sending ack 10100000
+random number = 0.514746 0.050000
+random number = 0.331386 0.050000
+random number = 0.604206 0.050000
+Resending msg 00111000Hello7 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Resending msg 01000000Hello8 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 01101000Hello13 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+Sending msg 01110000Hello14 to server.sin_port = 54020, server.sin_addr.s_addr = 16777343
+random number = 0.887100 0.050000
+Sending ack 10100010
+random number = 0.495490 0.050000
+Sending ack 10100010
+random number = 0.692492 0.050000
+Sending ack 10100001
+random number = 0.714541 0.050000
+Sending ack 10100000
+random number = 0.296538 0.050000
+random number = 0.915593 0.050000
+random number = 0.365448 0.050000
+random number = 0.083481 0.050000

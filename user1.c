@@ -28,20 +28,22 @@ int main()
 
     char buf[1024];
     
-    for (int i = 0; i < 30; i++)
+    for (int i = 0; i < 15; i++)
     {
-        sprintf(buf, "Hello%2d", i);
+        sprintf(buf, "Hello%d", i);
 
         sleep(1);
 
 
         ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
-        if (ret < 0)
+        while(ret<0)
         {
             perror("sendto error\n");
-            return -1;
+            sleep(1);
+            ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
         }
-        printf("message sent\n");
+        // return -1;
+        printf("message put in buf=%s\n",buf);
     }
 
 
@@ -49,12 +51,31 @@ int main()
 
     sleep(8);
 
-    ret = m_close(s);
-    if (ret < 0)
+    // ret = m_close(s);
+    // if (ret < 0)
+    // {
+    //     perror("close error\n");
+    //     return -1;
+    // }
+    // printf("socket closed\n");
+
+    // get the shared memory
+    key_t key = ftok("initmsocket.c", 2);
+    int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
+
+    // attach the shared memory to the process
+    SM *sm = (SM *)shmat(sm_id, NULL, 0);
+
+    for(int i=15;i<100;i++)
     {
-        perror("close error\n");
-        return -1;
+        printf("%d\n",i);
+        for(int j=0;j<10;j++)
+        {
+            printf("sendbuffer[%d] = %s\n", j, sm[0].sendbuffer[j].text);
+        }
+        printf("\n");
+        sleep(1);
     }
-    printf("socket closed\n");
+
     return 0;
 }

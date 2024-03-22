@@ -13,12 +13,12 @@
 #include <signal.h>
 #include <errno.h>
 #include <time.h>
-#include <limits.h>
+
 #include "struct.h"
 
 #define T 5
 
-#define P_val 0.10
+
 
 #define P(s) semop(s, &sem_lock, 1)
 #define V(s) semop(s, &sem_unlock, 1)

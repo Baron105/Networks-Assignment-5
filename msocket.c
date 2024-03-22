@@ -95,9 +95,9 @@ int m_socket(int domain, int type, int protocol)
 
     sm[i].last_seq = -1;
 
-    for(int j=0;j<15;j++)
+    for(int p=0;p<15;p++)
     {
-        sm[i].rwnd.array[j] = -1;
+        sm[i].rwnd.array[p] = -1;
     }
 
     V(sem_id);
@@ -173,8 +173,10 @@ int m_bind(int sock,unsigned long s_ip, int s_port, unsigned long d_ip, int d_po
 
     V(sem_id);
 
+
     // detach the shared memory
     shmdt(sm);
+
 
     return 0;
 }
@@ -224,6 +226,7 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
         printf("sm[i].ip = %ld, d_ip = %ld, sm[i].port = %d, d_port = %d\n", sm[i].ip, d_ip, sm[i].port, d_port);
         printf("ENOTBOUND error.Invalid destination or port. \n");
         V(sem_id);
+        shmdt(sm);
         return -1;
     }
 
@@ -232,6 +235,7 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
     {
         errno = ENOBUFS;
         V(sem_id);
+        shmdt(sm);
         return -1;
     }
 
@@ -242,6 +246,14 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
         sm[i].sendbuffer_out = 0;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
         sm[i].swnd.array[sm[i].last_seq] = sm[i].sendbuffer_in;
+        // print the recv buffer
+        printf("initial case sendbuffer_in = %d\n", sm[i].sendbuffer_in);
+        printf("initial case sendbuffer_out = %d\n", sm[i].sendbuffer_out);
+        for(int j=0;j<10;j++)
+        {
+            printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
+        }
+
     }
     else
     {
@@ -249,6 +261,13 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
         sm[i].sendbuffer_in = (sm[i].sendbuffer_in + 1) % 10;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
         sm[i].swnd.array[sm[i].last_seq] = sm[i].sendbuffer_in;
+        // print the recv buffer
+        printf("sendbuffer_in = %d\n", sm[i].sendbuffer_in);
+        printf("sendbuffer_out = %d\n", sm[i].sendbuffer_out);
+        for(int j=0;j<10;j++)
+        {
+            printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
+        }
     }
 
     V(sem_id);
@@ -295,6 +314,7 @@ int m_recvfrom(int sock, char *buf, int len, int flags,unsigned long s_ip, int s
     {
         printf("ENOTBOUND error.Invalid source or port. \n");
         V(sem_id);
+        shmdt(sm);
         return -1;
     }
 
@@ -302,11 +322,17 @@ int m_recvfrom(int sock, char *buf, int len, int flags,unsigned long s_ip, int s
     // this msg would be in recvbuffer[exp_seq%5]
 
     printf("exp_seq = %d\n", sm[i].exp_seq);
+    // printf the recv buffer
+    for(int j=0;j<5;j++)
+    {
+        printf("recvbuffer[%d] = %s\n", j, sm[i].recvbuffer[j].text);
+    }
 
-    if(strncmp(sm[i].recvbuffer[sm[i].exp_seq%5].text, "\0\0", 2) == 0)
+    if(strncmp(sm[i].recvbuffer[sm[i].exp_seq%5].text, "\0", 1) == 0)
     {
         errno = ENOMSG;
         V(sem_id);
+        shmdt(sm);
         return -1;
     }
     // memset(buf, '\0', 1024);
@@ -375,14 +401,3 @@ int m_close(int sock)
     return 0;
 }
 
-int dropMessage(float p)
-{
-    srand(time(0));
-    // generate a random number between 0 and 1, if it is less than p, return 1, else return 0
-    double r = ((double)rand()) / INT_MAX;
-    printf("random number = %lf\n", r);
-    if (r < p)
-        return 1;
-    else
-        return 0;
-}

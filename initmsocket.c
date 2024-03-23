@@ -255,6 +255,7 @@ void *S()
 
                         // send the message
                         int n = sendto(sm[i].udp_id, message, 1032, 0, (struct sockaddr *)&server, sizeof(server));
+                        sm[i].transmission_cnt++;
 
                         if (n == -1)
                         {
@@ -342,6 +343,7 @@ void *S()
                         // send the message
 
                         int n = sendto(sm[i].udp_id, message, 1032, 0, (struct sockaddr *)&server, sizeof(server));
+                        sm[i].transmission_cnt++;
 
                         if (n == -1)
                         {
@@ -428,13 +430,41 @@ void *R()
                 if (sm[i].alloted == 1)
                 {
                     timeout_cnt[i]++;
-                    if ((timeout_cnt[i] == 3 || sm[i].flag == 1) && ((sm[i].rwnd.middle >= 0) || (sm[i].rwnd.middle == 0 && sm[i].rwnd.left != 0)))
+                    if ((timeout_cnt[i] == 3 || sm[i].flag == 1))
                     {
                         if (timeout_cnt[i] == 3)
                             printf("nospace ack resent\n");
                         // send an ack for the last message received in order
                         int seq = (sm[i].rwnd.middle - 1 + 15) % 15;
-                        int rem = (sm[i].rwnd.right - sm[i].rwnd.middle + 15) % 15;
+                        int rem = 0;
+
+                        int temp = (sm[i].rwnd.right - 1 + 15) % 15;
+
+                            // print the middle right and the array
+
+                            // printf("RIGHT=%d,MIDDLE=%d\n",sm[i].rwnd.right,sm[i].rwnd.middle);
+                            // for(int j=0;j<15;j++)
+                            // {
+                            //     printf("%d ",sm[i].rwnd.array[j]);
+                            // }
+                            // printf("\n");
+
+                        while (temp != sm[i].rwnd.middle)
+                        {
+                            if (sm[i].rwnd.array[temp] == -1)
+                            {
+                                rem++;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                            temp = (temp - 1 + 15) % 15;
+                        }
+                        if (temp == sm[i].rwnd.middle && sm[i].rwnd.array[temp] == -1)
+                        {
+                            rem++;
+                        }
 
                         char message[9];
 
@@ -488,7 +518,7 @@ void *R()
                     // 1. it is an ack
                     // 2. it is a data message
 
-                    char header[8];
+                    char header[9];
                     struct sockaddr_in server;
                     socklen_t len = sizeof(server);
                     int n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT | MSG_PEEK, (struct sockaddr *)&server, &len);
@@ -528,7 +558,7 @@ void *R()
                             if (dropMessage(P_val) == 1)
                             {
                                 printf("message is dropped %s\n", message);
-                                memset(header, '\0', 8);
+                                memset(header, '\0', 9);
                                 n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT | MSG_PEEK, (struct sockaddr *)&server, &len);
                                 // bad guy check
                                 while (n > 0 && (server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port))
@@ -653,7 +683,7 @@ void *R()
                             // it is an ack
                             // it is not a bad guy also
 
-                            memset(header, '\0', 8);
+                            memset(header, '\0', 9);
                             recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
 
                             if (dropMessage(P_val) == 1)

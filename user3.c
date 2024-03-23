@@ -44,10 +44,11 @@ int main()
             break;
         }
         ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
+        sleep(1);
         while (ret < 0)
         {
             perror("sendto error\n");
-            // sleep(1);
+            sleep(1);
             ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
         }
         memset(buf, 0, sizeof(buf));
@@ -61,7 +62,7 @@ int main()
     while (ret < 0)
     {
         perror("sendto error\n");
-        sleep(1);
+        // sleep(1);
         ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
     }
     msgs++;
@@ -77,11 +78,14 @@ int main()
     // attach the shared memory to the process
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
 
-    P(sem_id);
-    double avg_transmission_cnt = 1.0*sm[s-1].transmission_cnt / msgs;
-    printf("Average transmission count = %lf\n", avg_transmission_cnt);
+    sleep(60);
 
-    sleep(100);
+    P(sem_id);
+    double avg_transmission_cnt = (1.0*sm[s-1].transmission_cnt) / msgs;
+    printf("Average transmission count = %lf\n", avg_transmission_cnt);
+    V(sem_id);
+
+    shmdt(sm);
 
     // ret = m_close(s);
     // if (ret < 0)

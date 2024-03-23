@@ -31,12 +31,12 @@ int main()
 
     while (1)
     {
-        // sleep(1);
+        sleep(1);
         ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
         while (ret < 0)
         {
             perror("recvfrom error");
-            // sleep(1);
+            sleep(1);
             ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
         }
 

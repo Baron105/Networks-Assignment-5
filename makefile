@@ -29,4 +29,4 @@ initmsocket.o: initmsocket.c struct.h
 	$(CC) $(CFLAGS) -c initmsocket.c
 
 clean:
-	rm -f *.o *.a *.gch initmsocket user1 user2
+	rm -f *.o *.a *.gch initmsocket user1 user2 user3 user4

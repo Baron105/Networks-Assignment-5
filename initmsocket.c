@@ -298,7 +298,8 @@ void *S()
                 // update right value
                 int x;
                 // if (sm[i].udp_id == 3)
-                // printf("middle = %d, window_size = %d, last_seq = %d\n", sm[i].swnd.middle, sm[i].swnd.window_size, sm[i].last_seq);
+                // printf("middle = %d, window_size = %d, last_seq = %d, right=%d\n", sm[i].swnd.middle, sm[i].swnd.window_size, sm[i].last_seq, sm[i].swnd.right);
+
                 if ((sm[i].swnd.window_size) < (sm[i].last_seq + 1 - sm[i].swnd.right + 15) % 15)
                 {
                     x = (sm[i].swnd.window_size + sm[i].swnd.right) % 15;
@@ -456,7 +457,7 @@ void *R()
                         server.sin_port = sm[i].port;
                         server.sin_addr.s_addr = sm[i].ip;
 
-                        printf("Sending ACK %s\n", message);
+                        printf("Sending ack %s\n", message);
                         int n = sendto(sm[i].udp_id, message, 8, 0, (struct sockaddr *)&server, sizeof(server));
 
                         if (n == -1)

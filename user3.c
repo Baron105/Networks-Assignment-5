@@ -1,5 +1,10 @@
 #include "msocket.h"
 
+int msgs = 0;
+struct sembuf sem_lock = {0, -1, 0};
+struct sembuf sem_unlock = {0, 1, 0};
+
+
 int main()
 {
     int s = m_socket(AF_INET, SOCK_DGRAM, 0);
@@ -32,8 +37,8 @@ int main()
 
     while (1)
     {
-        sleep(1);
         int x = read(fd, buf, 1023);
+        msgs++;
         if (x == 0)
         {
             break;
@@ -42,11 +47,9 @@ int main()
         while (ret < 0)
         {
             perror("sendto error\n");
-            sleep(1);
+            // sleep(1);
             ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
         }
-        printf("message put in buf=%s\n", buf);
-
         memset(buf, 0, sizeof(buf));
     }
 
@@ -61,6 +64,22 @@ int main()
         sleep(1);
         ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
     }
+    msgs++;
+
+    // get the semaphore for the shared memory
+    key_t sem_key = ftok("initmsocket.c", 1);
+    int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
+
+    // get the shared memory
+    key_t key = ftok("initmsocket.c", 2);
+    int sm_id = shmget(key, sizeof(SM) * 25, 0666 | IPC_CREAT);
+
+    // attach the shared memory to the process
+    SM *sm = (SM *)shmat(sm_id, NULL, 0);
+
+    P(sem_id);
+    double avg_transmission_cnt = 1.0*sm[s-1].transmission_cnt / msgs;
+    printf("Average transmission count = %lf\n", avg_transmission_cnt);
 
     sleep(100);
 

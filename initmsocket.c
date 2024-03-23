@@ -14,14 +14,10 @@
 #include <errno.h>
 #include <time.h>
 #include <pthread.h>
-#include <limits.h>
-#include "struct.h"
+// #include <limits.h>
+// #include "struct.h"
+#include "msocket.h"
 
-#define T 5
-#define P_val 0.10
-
-#define P(s) semop(s, &sem_lock, 1)
-#define V(s) semop(s, &sem_unlock, 1)
 
 void *R();
 void *S();
@@ -33,6 +29,7 @@ int new_bind[25]; // used to check if the socket is newly binding , taken care o
 
 void removeall()
 {
+
     // delete the shared memory and semaphores
     key_t key = ftok("initmsocket.c", 2);
     int sm_id = shmget(key, sizeof(SM) * 25, 0666);
@@ -248,7 +245,8 @@ void *S()
                         message[4] = (j % 2) ? '1' : '0';
 
                         message[5] = message[6] = message[7] = '0';
-
+                        message[8] = '\0';
+                        printf("Resending msg %s to server.sin_port = %d, server.sin_addr.s_addr = %u\n", message, server.sin_port, server.sin_addr.s_addr);
                         for (int q = 0; q < 1024; q++)
                         {
                             // if (sm[i].sendbuffer[j].text[q]=='\0') break;
@@ -256,7 +254,6 @@ void *S()
                         }
 
                         // send the message
-                        printf("Resending msg %s to server.sin_port = %d, server.sin_addr.s_addr = %u\n", message, server.sin_port, server.sin_addr.s_addr);
                         int n = sendto(sm[i].udp_id, message, 1032, 0, (struct sockaddr *)&server, sizeof(server));
 
                         if (n == -1)
@@ -280,7 +277,7 @@ void *S()
             if (sm[i].alloted == 1)
             {
                 // move the left upto middle
-                if (sm[i].sendbuffer_out != -1 && sm[i].swnd.middle != -1)
+                if (sm[i].sendbuffer_out != -1 && sm[i].swnd.middle != 0)
                 {
                     while (sm[i].swnd.left != sm[i].swnd.middle)
                     {
@@ -337,12 +334,12 @@ void *S()
 
                         message[5] = message[6] = message[7] = '0';
                         message[8] = '\0';
+                        printf("Sending msg %s to server.sin_port = %d, server.sin_addr.s_addr = %u\n", message, server.sin_port, server.sin_addr.s_addr);
                         strcat(message, sm[i].sendbuffer[sm[i].swnd.array[sm[i].swnd.right]].text);
                         // padding the message
                         for (int k = strlen(sm[i].sendbuffer[sm[i].swnd.array[sm[i].swnd.right]].text); k < 1024; k++)
                             message[k + 8] = '\0';
                         // send the message
-                        printf("Sending msg %s to server.sin_port = %d, server.sin_addr.s_addr = %u\n", message, server.sin_port, server.sin_addr.s_addr);
 
                         int n = sendto(sm[i].udp_id, message, 1032, 0, (struct sockaddr *)&server, sizeof(server));
 
@@ -431,7 +428,7 @@ void *R()
                 if (sm[i].alloted == 1)
                 {
                     timeout_cnt[i]++;
-                    if ((timeout_cnt[i] == 3 || sm[i].flag == 1) && ((sm[i].rwnd.middle > 0) || (sm[i].rwnd.middle == 0 && sm[i].rwnd.left != 0)))
+                    if ((timeout_cnt[i] == 3 || sm[i].flag == 1) && ((sm[i].rwnd.middle >= 0) || (sm[i].rwnd.middle == 0 && sm[i].rwnd.left != 0)))
                     {
                         if (timeout_cnt[i] == 3)
                             printf("nospace ack resent\n");
@@ -661,7 +658,7 @@ void *R()
 
                             if (dropMessage(P_val) == 1)
                             {
-                                printf("ACK is dropped %s\n", header);
+                                printf("ack is dropped %s\n", header);
                                 memset(header, '\0', 8);
                                 n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT | MSG_PEEK, (struct sockaddr *)&server, &len);
                                 // bad guy check

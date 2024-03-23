@@ -26,23 +26,22 @@ int main()
     printf("bind successful with s_ip = %ld, s_port = %d\n", s_ip, s_port);
 
     char buf[1024];
-    sleep(8);
 
     int fd = open("juliet.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
     while (1)
     {
-        sleep(1);
+        // sleep(1);
         ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
         while (ret < 0)
         {
             perror("recvfrom error");
-            sleep(1);
+            // sleep(1);
             ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
         }
 
-        printf("message received\n");
-        printf("message = %s\n", buf);
+        // printf("message received\n");
+        // printf("message = %s\n", buf);
 
         // check if the message is terminal message
         if (strcmp(buf, "##########") == 0)
@@ -53,7 +52,6 @@ int main()
         write(fd, buf, strlen(buf));
     }
 
-    sleep(100);
 
     // ret = m_close(s);
 

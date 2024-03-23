@@ -1,10 +1,12 @@
 #include "msocket.h"
 
-struct sembuf sem_lock = {0, -1, 0};
-struct sembuf sem_unlock = {0, 1, 0};
+
 
 int m_socket(int domain, int type, int protocol)
 {
+    struct sembuf sem_lock = {0, -1, 0};
+    struct sembuf sem_unlock = {0, 1, 0};
+
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
@@ -77,8 +79,8 @@ int m_socket(int domain, int type, int protocol)
     // set the window size
     sm[i].swnd.window_size = 5;
     sm[i].swnd.left = -1;
-    sm[i].swnd.middle = -1;
-    sm[i].swnd.right = -1;
+    sm[i].swnd.middle = 0;
+    sm[i].swnd.right = 0;
 
     sm[i].rwnd.window_size = 5;
     sm[i].rwnd.left = 0;
@@ -98,6 +100,7 @@ int m_socket(int domain, int type, int protocol)
         sm[i].rwnd.array[p] = -1;
     }
 
+    sm[i].transmission_cnt = 0;
     V(sem_id);
 
     // detach the shared memory
@@ -108,6 +111,9 @@ int m_socket(int domain, int type, int protocol)
 
 int m_bind(int sock, unsigned long s_ip, int s_port, unsigned long d_ip, int d_port)
 {
+    struct sembuf sem_lock = {0, -1, 0};
+    struct sembuf sem_unlock = {0, 1, 0};
+
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
@@ -179,6 +185,9 @@ int m_bind(int sock, unsigned long s_ip, int s_port, unsigned long d_ip, int d_p
 
 int m_sendto(int sock, char *buf, int len, int flags, unsigned long d_ip, int d_port)
 {
+    struct sembuf sem_lock = {0, -1, 0};
+    struct sembuf sem_unlock = {0, 1, 0};
+
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
@@ -219,8 +228,7 @@ int m_sendto(int sock, char *buf, int len, int flags, unsigned long d_ip, int d_
     // check is the d_ip and d_port are valid
     if ((sm[i].ip != d_ip) || (sm[i].port != d_port))
     {
-        printf("sm[i].ip = %ld, d_ip = %ld, sm[i].port = %d, d_port = %d\n", sm[i].ip, d_ip, sm[i].port, d_port);
-        printf("ENOTBOUND error.Invalid destination or port. \n");
+        errno = ENOTCONN;
         V(sem_id);
         shmdt(sm);
         return -1;
@@ -242,13 +250,6 @@ int m_sendto(int sock, char *buf, int len, int flags, unsigned long d_ip, int d_
         sm[i].sendbuffer_out = 0;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
         sm[i].swnd.array[sm[i].last_seq] = sm[i].sendbuffer_in;
-        // print the recv buffer
-        printf("initial case sendbuffer_in = %d\n", sm[i].sendbuffer_in);
-        printf("initial case sendbuffer_out = %d\n", sm[i].sendbuffer_out);
-        for (int j = 0; j < 10; j++)
-        {
-            printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
-        }
     }
     else
     {
@@ -256,13 +257,6 @@ int m_sendto(int sock, char *buf, int len, int flags, unsigned long d_ip, int d_
         sm[i].sendbuffer_in = (sm[i].sendbuffer_in + 1) % 10;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
         sm[i].swnd.array[sm[i].last_seq] = sm[i].sendbuffer_in;
-        // print the recv buffer
-        printf("sendbuffer_in = %d\n", sm[i].sendbuffer_in);
-        printf("sendbuffer_out = %d\n", sm[i].sendbuffer_out);
-        for(int j=0;j<10;j++)
-        {
-            printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
-        }
     }
 
     V(sem_id);
@@ -275,6 +269,9 @@ int m_sendto(int sock, char *buf, int len, int flags, unsigned long d_ip, int d_
 
 int m_recvfrom(int sock, char *buf, int len, int flags, unsigned long s_ip, int s_port)
 {
+    struct sembuf sem_lock = {0, -1, 0};
+    struct sembuf sem_unlock = {0, 1, 0};
+
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
@@ -307,7 +304,7 @@ int m_recvfrom(int sock, char *buf, int len, int flags, unsigned long s_ip, int 
     // check is the s_ip and s_port are valid
     if (sm[i].ip != s_ip || sm[i].port != s_port)
     {
-        printf("ENOTBOUND error.Invalid source or port. \n");
+        errno = ENOTCONN;
         V(sem_id);
         shmdt(sm);
         return -1;
@@ -316,12 +313,6 @@ int m_recvfrom(int sock, char *buf, int len, int flags, unsigned long s_ip, int 
     // check if there is something to receive inorder
     // this msg would be in recvbuffer[exp_seq%5]
 
-    printf("exp_seq = %d\n", sm[i].exp_seq);
-    // printf the recv buffer
-    for(int j=0;j<5;j++)
-    {
-        printf("recvbuffer[%d] = %s\n", j, sm[i].recvbuffer[j].text);
-    }
 
     if (strncmp(sm[i].recvbuffer[sm[i].exp_seq % 5].text, "\0", 1) == 0)
     {
@@ -354,6 +345,9 @@ int m_recvfrom(int sock, char *buf, int len, int flags, unsigned long s_ip, int 
 
 int m_close(int sock)
 {
+    struct sembuf sem_lock = {0, -1, 0};
+    struct sembuf sem_unlock = {0, 1, 0};
+    
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
     int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);

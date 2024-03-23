@@ -40,4 +40,5 @@ typedef struct
     int nospace;
     int flag;
     int exp_seq;
+    int transmission_cnt;
 } SM;

@@ -656,7 +656,7 @@ void *R()
                             // it is an ack
                             // it is not a bad guy also
 
-                            memset(header, '\0', 8);
+                            memset(header, '\0', 9);
                             recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
 
                             if (dropMessage(P_val) == 1)

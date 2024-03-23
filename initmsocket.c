@@ -18,7 +18,7 @@
 #include "struct.h"
 
 #define T 5
-#define P_val 0.5
+#define P_val 0.10
 
 #define P(s) semop(s, &sem_lock, 1)
 #define V(s) semop(s, &sem_unlock, 1)
@@ -187,6 +187,8 @@ int main()
         }
         V(sem_id2);
     }
+
+    shmdt(sm);
 }
 
 // have delete the  shared memory and semaphore
@@ -238,7 +240,7 @@ void *S()
                         // timeout on the socket
                         // resend the messages from from middle to right -1
 
-                        char message[1032] = {'\0'};
+                        char message[1032];
                         // assigning the header
                         // since it is a data message
                         message[0] = '0';
@@ -251,11 +253,10 @@ void *S()
                         
                         for (int q=0;q<1024;q++)
                         {
-                            if (sm[i].sendbuffer[j].text[q]=='\0') break;
-                            message[q+8]=sm[i].sendbuffer[j].text[q];
+                            // if (sm[i].sendbuffer[j].text[q]=='\0') break;
+                            message[q+8]=sm[i].sendbuffer[sm[i].swnd.array[j]].text[q];
                         }
 
-                        printf("SENDBUFFER OF RESENDING %s\n",sm[i].sendbuffer[j].text);
 
                         // send the message
                         printf("Resending msg %s to server.sin_port = %d, server.sin_addr.s_addr = %u\n", message, server.sin_port, server.sin_addr.s_addr);
@@ -265,6 +266,8 @@ void *S()
                         {
                             perror("Error in sending the message\n");
                             removeall();
+                            shmdt(sm);
+                            V(sem_id);
                             pthread_exit(NULL);
                         }
 
@@ -298,8 +301,8 @@ void *S()
 
                 // update right value
                 int x ;
-                if (sm[i].udp_id == 3)
-                printf("middle = %d, window_size = %d, last_seq = %d\n", sm[i].swnd.middle, sm[i].swnd.window_size, sm[i].last_seq);
+                // if (sm[i].udp_id == 3)
+                // printf("middle = %d, window_size = %d, last_seq = %d\n", sm[i].swnd.middle, sm[i].swnd.window_size, sm[i].last_seq);
                 if((sm[i].swnd.window_size) < (sm[i].last_seq + 1 - sm[i].swnd.right + 15)%15)
                 {
                     x = ( sm[i].swnd.window_size + sm[i].swnd.right)%15;
@@ -308,18 +311,13 @@ void *S()
                 {
                     x = (sm[i].last_seq + 1)%15;
                 }
-                if(sm[i].udp_id==3)
-                printf("%d TEMP\n", x);
-                printf("temp-sm[i].swnd.middle+15 = %d\n",x-sm[i].swnd.middle+15);
-                printf("((temp-sm[i].swnd.middle+15)mod15) = %d\n",((x-sm[i].swnd.middle+15)%15));
+
                 if(((x-sm[i].swnd.middle+15)%15) > 5)
                 {
-                    printf("MOAJOR CHECK\n");
                     x = sm[i].swnd.right;
-                    printf("%d X\n",x);
                 }
-                if (sm[i].udp_id == 3)
-                printf("temp = %d, swnd.right = %d\n", x, sm[i].swnd.right);
+                // if (sm[i].udp_id == 3)
+                // printf("temp = %d, swnd.right = %d\n", x, sm[i].swnd.right);
                 while (sm[i].swnd.right != x)
                 {
                     if (sm[i].swnd.right != -1)
@@ -356,6 +354,8 @@ void *S()
                         {
                             perror("Error in sending the message\n");
                             removeall();
+                            shmdt(sm);
+                            V(sem_id);
                             pthread_exit(NULL);
                         }
 
@@ -412,6 +412,8 @@ void *R()
         {
             perror("Error in select\n");
             removeall();
+            shmdt(sm);
+            V(sem_id);
             pthread_exit(NULL);
         }
 
@@ -440,6 +442,7 @@ void *R()
                     timeout_cnt[i]++;
                     if ((timeout_cnt[i] == 3 || sm[i].flag == 1) &&((sm[i].rwnd.middle > 0) || (sm[i].rwnd.middle == 0 && sm[i].rwnd.left != 0)))
                     {
+                        if (timeout_cnt[i]==3) printf("nospace ack resent\n");
                         // send an ack for the last message received in order
                         int seq = (sm[i].rwnd.middle - 1 + 15) % 15;
                         int rem = (sm[i].rwnd.right - sm[i].rwnd.middle + 15) % 15;
@@ -469,6 +472,8 @@ void *R()
                         {
                             perror("Error in sending the ack\n");
                             removeall();
+                            shmdt(sm);
+                            V(sem_id);
                             pthread_exit(NULL);
                         }
                         if (sm[i].flag == 1)
@@ -655,6 +660,8 @@ void *R()
                                     {
                                         perror("Error in sending the ack\n");
                                         removeall();
+                                        shmdt(sm);
+                                        V(sem_id);
                                         pthread_exit(NULL);
                                     }
                                 }
@@ -668,34 +675,34 @@ void *R()
                             memset(header, '\0', 8);
                             recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
 
-                            // if(dropMessage(P_val)==1)
-                            // {
-                            //     printf("ACK is dropped %s\n", header);
-                            //     memset(header, '\0', 8);
-                            //     n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT|MSG_PEEK, (struct sockaddr *)&server, &len);
-                            //     // bad guy check
-                            //     while (n > 0 && (server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port))
-                            //     {
-                            //         // not the correct socket
-                            //         printf("Not the correct socket\n");
+                            if(dropMessage(P_val)==1)
+                            {
+                                printf("ACK is dropped %s\n", header);
+                                memset(header, '\0', 8);
+                                n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT|MSG_PEEK, (struct sockaddr *)&server, &len);
+                                // bad guy check
+                                while (n > 0 && (server.sin_addr.s_addr != sm[i].ip || server.sin_port != sm[i].port))
+                                {
+                                    // not the correct socket
+                                    printf("Not the correct socket\n");
 
-                            //         // receive the message
-                            //         char message[1032];
+                                    // receive the message
+                                    char message[1032];
 
-                            //         if (header[0] == '0')
-                            //         {
-                            //             // data message
-                            //             n = recvfrom(sm[i].udp_id, message, 1032, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
-                            //         }
-                            //         memset(header, '\0', 8);
+                                    if (header[0] == '0')
+                                    {
+                                        // data message
+                                        n = recvfrom(sm[i].udp_id, message, 1032, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
+                                    }
+                                    memset(header, '\0', 8);
 
-                            //         n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT|MSG_PEEK, (struct sockaddr *)&server, &len);
-                            //     }
+                                    n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT|MSG_PEEK, (struct sockaddr *)&server, &len);
+                                }
 
-                            //     if(n<=0)
-                            //         break;
-                            //     continue;
-                            // }
+                                if(n<=0)
+                                    break;
+                                continue;
+                            }
                             
 
                             // if (sm[i].udp_id == 3)

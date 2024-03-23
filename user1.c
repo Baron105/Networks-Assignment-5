@@ -28,7 +28,7 @@ int main()
 
     char buf[1024];
     
-    for (int i = 0; i < 15; i++)
+    for (int i = 0; i < 100; i++)
     {
         sprintf(buf, "Hello%d", i);
 
@@ -60,22 +60,26 @@ int main()
     // printf("socket closed\n");
 
     // get the shared memory
-    key_t key = ftok("initmsocket.c", 2);
-    int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
+    // key_t key = ftok("initmsocket.c", 2);
+    // int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
 
-    // attach the shared memory to the process
-    SM *sm = (SM *)shmat(sm_id, NULL, 0);
+    // // attach the shared memory to the process
+    // SM *sm = (SM *)shmat(sm_id, NULL, 0);
 
-    for(int i=15;i<100;i++)
-    {
-        printf("%d\n",i);
-        for(int j=0;j<10;j++)
-        {
-            printf("sendbuffer[%d] = %s\n", j, sm[0].sendbuffer[j].text);
-        }
-        printf("\n");
-        sleep(1);
-    }
+    // for(int i=15;i<100;i++)
+    // {
+    //     printf("%d\n",i);
+    //     for(int j=0;j<10;j++)
+    //     {
+    //         printf("sendbuffer[%d] = %s\n", j, sm[0].sendbuffer[j].text);
+    //     }
+    //     printf("\n");
+    //     sleep(1);
+    // }
+
+    // shmdt(sm);
+
+    while(1);
 
     return 0;
 }

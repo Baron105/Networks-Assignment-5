@@ -28,7 +28,7 @@ int main()
     char buf[1024];
     sleep(5);
 
-    for (int i = 0; i < 15; i++)
+    for (int i = 0; i < 100; i++)
     {
         sleep(1);
         ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
@@ -45,17 +45,19 @@ int main()
         printf("message = %s\n", buf);
     }
 
+    while(1);
 
 
-    ret = m_close(s);
 
-    if (ret < 0)
-    {
-        perror("close error\n");
-        return -1;
-    }
+    // ret = m_close(s);
 
-    printf("socket closed\n");
+    // if (ret < 0)
+    // {
+    //     perror("close error\n");
+    //     return -1;
+    // }
+
+    // printf("socket closed\n");
 
     return 0;
 }

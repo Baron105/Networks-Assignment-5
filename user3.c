@@ -27,37 +27,68 @@ int main()
     sleep(5);
 
     char buf[1024];
-    strcpy(buf, "Hello");
 
+    int fd = open("romeo.txt", O_RDONLY);
+
+    while (1)
+    {
+        sleep(1);
+        int x = read(fd, buf, 1023);
+        if (x == 0)
+        {
+            break;
+        }
+        ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
+        while (ret < 0)
+        {
+            perror("sendto error\n");
+            sleep(1);
+            ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
+        }
+        printf("message put in buf=%s\n", buf);
+
+        memset(buf, 0, sizeof(buf));
+    }
+
+    // terminal message
+    // 10 # symbols
+    strcpy(buf, "##########");
 
     ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
-    if (ret < 0)
+    while (ret < 0)
     {
         perror("sendto error\n");
-        return -1;
+        sleep(1);
+        ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
     }
-    printf("message sent\n");
 
+    sleep(100);
 
-    memset(buf, 0, sizeof(buf));
-    strcpy(buf, "Hello2");
+    // ret = m_close(s);
+    // if (ret < 0)
+    // {
+    //     perror("close error\n");
+    //     return -1;
+    // }
+    // printf("socket closed\n");
 
-    ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
-    if (ret < 0)
-    {
-        perror("sendto error\n");
-        return -1;
-    }
-    printf("message sent\n");
+    // get the shared memory
+    // key_t key = ftok("initmsocket.c", 2);
+    // int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
 
-    sleep(8);
+    // attach the shared memory to the process
+    // SM *sm = (SM *)shmat(sm_id, NULL, 0);
 
-    ret = m_close(s);
-    if (ret < 0)
-    {
-        perror("close error\n");
-        return -1;
-    }
-    printf("socket closed\n");
+    // for(int i=15;i<100;i++)
+    // {
+    //     printf("%d\n",i);
+    //     for(int j=0;j<10;j++)
+    //     {
+    //         printf("sendbuffer[%d] = %s\n", j, sm[0].sendbuffer[j].text);
+    //     }
+    //     printf("\n");
+    //     sleep(1);
+    // }
+
     return 0;
 }

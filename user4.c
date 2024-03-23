@@ -28,38 +28,42 @@ int main()
     char buf[1024];
     sleep(8);
 
-    ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
-    if (ret < 0)
+    int fd = open("juliet.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+    while (1)
     {
-        perror("recvfrom error");
-        return -1;
-    }
-    
+        sleep(1);
+        ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
+        while (ret < 0)
+        {
+            perror("recvfrom error");
+            sleep(1);
+            ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
+        }
 
-    printf("message received\n");
-    printf("message = %s\n", buf);
+        printf("message received\n");
+        printf("message = %s\n", buf);
 
-    ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
-    if (ret < 0)
-    {
-        perror("recvfrom error");
-        return -1;
-    }
-    
+        // check if the message is terminal message
+        if (strcmp(buf, "##########") == 0)
+        {
+            break;
+        }
 
-    printf("message received\n");
-    printf("message = %s\n", buf);
-
-
-    ret = m_close(s);
-
-    if (ret < 0)
-    {
-        perror("close error\n");
-        return -1;
+        write(fd, buf, strlen(buf));
     }
 
-    printf("socket closed\n");
+    sleep(100);
+
+    // ret = m_close(s);
+
+    // if (ret < 0)
+    // {
+    //     perror("close error\n");
+    //     return -1;
+    // }
+
+    // printf("socket closed\n");
 
     return 0;
 }

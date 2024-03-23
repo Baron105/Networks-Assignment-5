@@ -1,5 +1,8 @@
 #include "msocket.h"
 
+struct sembuf sem_lock = {0, -1, 0};
+struct sembuf sem_unlock = {0, 1, 0};
+
 int main()
 {
     int s = m_socket(AF_INET, SOCK_DGRAM, 0);
@@ -26,9 +29,11 @@ int main()
     printf("bind successful with s_ip = %ld, s_port = %d\n", s_ip, s_port);
 
     char buf[1024];
-    sleep(5);
+    // sleep(5);
 
-    for (int i = 0; i < 100; i++)
+    int fd = open("hello.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+    while(1)
     {
         sleep(1);
         ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
@@ -38,14 +43,17 @@ int main()
             sleep(1);
             ret = m_recvfrom(s, buf, 1024, 0, d_ip, d_port);
         }
-        
-        
 
-        printf("message received\n");
-        printf("message = %s\n", buf);
+        if (strcmp(buf, "##########") == 0)
+        {
+            break;
+        }
+
+        write(fd, buf, strlen(buf));
+        write(fd, "\n", 1);
     }
 
-    while(1);
+    // while(1);
 
 
 

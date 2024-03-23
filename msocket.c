@@ -257,12 +257,12 @@ int m_sendto(int sock, char *buf, int len, int flags, unsigned long d_ip, int d_
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
         sm[i].swnd.array[sm[i].last_seq] = sm[i].sendbuffer_in;
         // print the recv buffer
-        // printf("sendbuffer_in = %d\n", sm[i].sendbuffer_in);
-        // printf("sendbuffer_out = %d\n", sm[i].sendbuffer_out);
-        // for(int j=0;j<10;j++)
-        // {
-        //     printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
-        // }
+        printf("sendbuffer_in = %d\n", sm[i].sendbuffer_in);
+        printf("sendbuffer_out = %d\n", sm[i].sendbuffer_out);
+        for(int j=0;j<10;j++)
+        {
+            printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
+        }
     }
 
     V(sem_id);
@@ -318,10 +318,10 @@ int m_recvfrom(int sock, char *buf, int len, int flags, unsigned long s_ip, int 
 
     printf("exp_seq = %d\n", sm[i].exp_seq);
     // printf the recv buffer
-    // for(int j=0;j<5;j++)
-    // {
-    //     printf("recvbuffer[%d] = %s\n", j, sm[i].recvbuffer[j].text);
-    // }
+    for(int j=0;j<5;j++)
+    {
+        printf("recvbuffer[%d] = %s\n", j, sm[i].recvbuffer[j].text);
+    }
 
     if (strncmp(sm[i].recvbuffer[sm[i].exp_seq % 5].text, "\0", 1) == 0)
     {

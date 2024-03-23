@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <time.h>
 
 #include "struct.h"

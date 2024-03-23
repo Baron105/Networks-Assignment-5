@@ -7,28 +7,27 @@ int m_socket(int domain, int type, int protocol)
 {
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
-    int sem_id = semget(sem_key, 1, 0666|IPC_CREAT);
+    int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
 
     // get the shared memory
     key_t key = ftok("initmsocket.c", 2);
-    int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
+    int sm_id = shmget(key, sizeof(SM) * 25, 0666 | IPC_CREAT);
 
     // attach the shared memory to the process
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
 
-
     // shmget sem1 sem2
     key_t sockinfo = ftok("initmsocket.c", 3);
-    int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666|IPC_CREAT);
+    int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666 | IPC_CREAT);
 
     // attach the shared memory to the process
     SOCK_INFO *si = (SOCK_INFO *)shmat(sockinfo_id, NULL, 0);
 
     // get the semaphore for the shared memory
     key_t sem_key1 = ftok("initmsocket.c", 4);
-    int sem_id1 = semget(sem_key1, 1, 0666|IPC_CREAT);
+    int sem_id1 = semget(sem_key1, 1, 0666 | IPC_CREAT);
     key_t sem_key2 = ftok("initmsocket.c", 5);
-    int sem_id2 = semget(sem_key2, 1, 0666|IPC_CREAT);
+    int sem_id2 = semget(sem_key2, 1, 0666 | IPC_CREAT);
 
     P(sem_id);
     // find the first free SM
@@ -52,7 +51,6 @@ int m_socket(int domain, int type, int protocol)
     }
 
     // create a udp socket
-    
 
     V(sem_id1);
     P(sem_id2);
@@ -95,7 +93,7 @@ int m_socket(int domain, int type, int protocol)
 
     sm[i].last_seq = -1;
 
-    for(int p=0;p<15;p++)
+    for (int p = 0; p < 15; p++)
     {
         sm[i].rwnd.array[p] = -1;
     }
@@ -108,15 +106,15 @@ int m_socket(int domain, int type, int protocol)
     return i + 1;
 }
 
-int m_bind(int sock,unsigned long s_ip, int s_port, unsigned long d_ip, int d_port)
+int m_bind(int sock, unsigned long s_ip, int s_port, unsigned long d_ip, int d_port)
 {
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
-    int sem_id = semget(sem_key, 1, 0666|IPC_CREAT);
+    int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
 
     // get the shared memory
     key_t key = ftok("initmsocket.c", 2);
-    int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
+    int sm_id = shmget(key, sizeof(SM) * 25, 0666 | IPC_CREAT);
 
     // attach the shared memory to the process
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
@@ -141,16 +139,16 @@ int m_bind(int sock,unsigned long s_ip, int s_port, unsigned long d_ip, int d_po
 
     // get the shared memory of sockinfo
     key_t sockinfo = ftok("initmsocket.c", 3);
-    int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666|IPC_CREAT);
+    int sockinfo_id = shmget(sockinfo, sizeof(SOCK_INFO), 0666 | IPC_CREAT);
 
     // attach the shared memory to the process
     SOCK_INFO *si = (SOCK_INFO *)shmat(sockinfo_id, NULL, 0);
 
     // get the semaphore for the shared memory
     key_t sem_key1 = ftok("initmsocket.c", 4);
-    int sem_id1 = semget(sem_key1, 1, 0666|IPC_CREAT);
+    int sem_id1 = semget(sem_key1, 1, 0666 | IPC_CREAT);
     key_t sem_key2 = ftok("initmsocket.c", 5);
-    int sem_id2 = semget(sem_key2, 1, 0666|IPC_CREAT);
+    int sem_id2 = semget(sem_key2, 1, 0666 | IPC_CREAT);
 
     si->ip = s_ip;
     si->port = s_port;
@@ -173,23 +171,21 @@ int m_bind(int sock,unsigned long s_ip, int s_port, unsigned long d_ip, int d_po
 
     V(sem_id);
 
-
     // detach the shared memory
     shmdt(sm);
-
 
     return 0;
 }
 
-int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_port)
+int m_sendto(int sock, char *buf, int len, int flags, unsigned long d_ip, int d_port)
 {
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
-    int sem_id = semget(sem_key, 1, 0666|IPC_CREAT);
+    int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
 
     // get the shared memory
     key_t key = ftok("initmsocket.c", 2);
-    int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
+    int sm_id = shmget(key, sizeof(SM) * 25, 0666 | IPC_CREAT);
 
     // attach the shared memory to the process
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
@@ -249,11 +245,10 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
         // print the recv buffer
         printf("initial case sendbuffer_in = %d\n", sm[i].sendbuffer_in);
         printf("initial case sendbuffer_out = %d\n", sm[i].sendbuffer_out);
-        for(int j=0;j<10;j++)
+        for (int j = 0; j < 10; j++)
         {
             printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
         }
-
     }
     else
     {
@@ -262,12 +257,12 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
         sm[i].swnd.array[sm[i].last_seq] = sm[i].sendbuffer_in;
         // print the recv buffer
-        printf("sendbuffer_in = %d\n", sm[i].sendbuffer_in);
-        printf("sendbuffer_out = %d\n", sm[i].sendbuffer_out);
-        for(int j=0;j<10;j++)
-        {
-            printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
-        }
+        // printf("sendbuffer_in = %d\n", sm[i].sendbuffer_in);
+        // printf("sendbuffer_out = %d\n", sm[i].sendbuffer_out);
+        // for(int j=0;j<10;j++)
+        // {
+        //     printf("sendbuffer[%d] = %s\n", j, sm[i].sendbuffer[j].text);
+        // }
     }
 
     V(sem_id);
@@ -278,15 +273,15 @@ int m_sendto(int sock, char *buf, int len, int flags,unsigned long d_ip, int d_p
     return len;
 }
 
-int m_recvfrom(int sock, char *buf, int len, int flags,unsigned long s_ip, int s_port)
+int m_recvfrom(int sock, char *buf, int len, int flags, unsigned long s_ip, int s_port)
 {
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
-    int sem_id = semget(sem_key, 1, 0666|IPC_CREAT);
+    int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
 
     // get the shared memory
     key_t key = ftok("initmsocket.c", 2);
-    int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
+    int sm_id = shmget(key, sizeof(SM) * 25, 0666 | IPC_CREAT);
 
     // attach the shared memory to the process
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
@@ -323,12 +318,12 @@ int m_recvfrom(int sock, char *buf, int len, int flags,unsigned long s_ip, int s
 
     printf("exp_seq = %d\n", sm[i].exp_seq);
     // printf the recv buffer
-    for(int j=0;j<5;j++)
-    {
-        printf("recvbuffer[%d] = %s\n", j, sm[i].recvbuffer[j].text);
-    }
+    // for(int j=0;j<5;j++)
+    // {
+    //     printf("recvbuffer[%d] = %s\n", j, sm[i].recvbuffer[j].text);
+    // }
 
-    if(strncmp(sm[i].recvbuffer[sm[i].exp_seq%5].text, "\0", 1) == 0)
+    if (strncmp(sm[i].recvbuffer[sm[i].exp_seq % 5].text, "\0", 1) == 0)
     {
         errno = ENOMSG;
         V(sem_id);
@@ -337,13 +332,12 @@ int m_recvfrom(int sock, char *buf, int len, int flags,unsigned long s_ip, int s
     }
     // memset(buf, '\0', 1024);
     // copy the message to the buffer
-    strcpy(buf, sm[i].recvbuffer[sm[i].exp_seq%5].text);
+    strcpy(buf, sm[i].recvbuffer[sm[i].exp_seq % 5].text);
     sm[i].rwnd.array[sm[i].exp_seq] = -1;
 
-
-    memset(sm[i].recvbuffer[sm[i].exp_seq%5].text, '\0', 1024);
+    memset(sm[i].recvbuffer[sm[i].exp_seq % 5].text, '\0', 1024);
     sm[i].exp_seq = (sm[i].exp_seq + 1) % 15;
-    if(sm[i].nospace == 1)
+    if (sm[i].nospace == 1)
     {
         sm[i].nospace = 0;
         sm[i].flag = 1;
@@ -362,11 +356,11 @@ int m_close(int sock)
 {
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
-    int sem_id = semget(sem_key, 1, 0666|IPC_CREAT);
+    int sem_id = semget(sem_key, 1, 0666 | IPC_CREAT);
 
     // get the shared memory
     key_t key = ftok("initmsocket.c", 2);
-    int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
+    int sm_id = shmget(key, sizeof(SM) * 25, 0666 | IPC_CREAT);
 
     // attach the shared memory to the process
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
@@ -389,8 +383,6 @@ int m_close(int sock)
         return -1;
     }
 
-
-
     memset(&sm[i], 0, sizeof(SM));
 
     V(sem_id);
@@ -400,4 +392,3 @@ int m_close(int sock)
 
     return 0;
 }
-

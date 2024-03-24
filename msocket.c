@@ -1,9 +1,15 @@
 #include "msocket.h"
 
-
-
 int m_socket(int domain, int type, int protocol)
 {
+    // check if the type is SOCK_MTP
+    if (type != SOCK_MTP)
+    {
+        // set errno to EPROTOTYPE
+        errno = EPROTOTYPE;
+        return -1;
+    }
+
     struct sembuf sem_lock = {0, -1, 0};
     struct sembuf sem_unlock = {0, 1, 0};
 
@@ -253,6 +259,14 @@ int m_sendto(int sock, char *buf, int len, int flags, unsigned long d_ip, int d_
     }
     else
     {
+        // check if that place is already filled
+        // if (strncmp(sm[i].sendbuffer[(sm[i].sendbuffer_in + 1)%10].text, "\0", 1) != 0)
+        // {
+        //     errno = ENOBUFS;
+        //     V(sem_id);
+        //     shmdt(sm);
+        //     return -1;
+        // }
         sm[i].last_seq = (sm[i].last_seq + 1) % 15;
         sm[i].sendbuffer_in = (sm[i].sendbuffer_in + 1) % 10;
         strcpy(sm[i].sendbuffer[sm[i].sendbuffer_in].text, msg);
@@ -385,4 +399,16 @@ int m_close(int sock)
     shmdt(sm);
 
     return 0;
+}
+
+int dropMessage(float p)
+{
+
+    // generate a random number between 0 and 1, if it is less than p, return 1, else return 0
+    double r = ((double)rand()) / INT_MAX;
+    // printf("r = %lf p = %lf\n", r, p);
+    if (r < p)
+        return 1;
+    else
+        return 0;
 }

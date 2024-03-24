@@ -18,8 +18,9 @@
 
 // #include "struct.h"
 
+#define SOCK_MTP 2000
 #define T 5
-#define P_val 0.1
+#define P_val 0.05
 
 
 #define P(s) semop(s, &sem_lock, 1)

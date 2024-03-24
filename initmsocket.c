@@ -21,6 +21,9 @@
 
 void *R();
 void *S();
+void *G();
+
+fd_set fd;
 
 struct sembuf sem_lock = {0, -1, 0};
 struct sembuf sem_unlock = {0, 1, 0};
@@ -52,17 +55,6 @@ void removeall()
     semctl(sem_id2, 0, IPC_RMID, 0);
 
     printf("Shared memory and semaphores deleted\n");
-}
-
-int dropMessage(float p)
-{
-
-    // generate a random number between 0 and 1, if it is less than p, return 1, else return 0
-    double r = ((double)rand()) / INT_MAX;
-    if (r < p)
-        return 1;
-    else
-        return 0;
 }
 
 void signal_handler(int signum)
@@ -99,9 +91,11 @@ int main()
 
     memset(sm, 0, sizeof(SM) * 25);
     memset(new_bind, 0, sizeof(new_bind));
-    pthread_t r, s;
+    pthread_t r, s, g;
     pthread_create(&r, NULL, R, NULL);
     pthread_create(&s, NULL, S, NULL);
+    pthread_create(&g, NULL, G, NULL);
+
 
     // making the SOCKINFO shared memory and sem1 and sem2
     key_t sockinfo = ftok("initmsocket.c", 3);
@@ -278,7 +272,7 @@ void *S()
             if (sm[i].alloted == 1)
             {
                 // move the left upto middle
-                if (sm[i].sendbuffer_out != -1 && sm[i].swnd.middle != 0)
+                if (sm[i].sendbuffer_out != -1)
                 {
                     while (sm[i].swnd.left != sm[i].swnd.middle)
                     {
@@ -379,8 +373,6 @@ void *R()
 
     // attach the shared memory to the process
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
-
-    fd_set fd;
 
     struct timeval tv;
     tv.tv_sec = T;
@@ -549,6 +541,13 @@ void *R()
                             char message[1032] = {'\0'};
                             n = recvfrom(sm[i].udp_id, message, 1032, MSG_DONTWAIT, (struct sockaddr *)&server, &len);
 
+                            char incaseitdropsheader[9] = {'\0'};
+
+                            for (int j = 0; j < 8; j++)
+                            {
+                                incaseitdropsheader[j] = message[j];
+                            }
+
                             // drop the first 8 bytes
                             for (int j = 0; j < 1032; j++)
                             {
@@ -557,7 +556,7 @@ void *R()
 
                             if (dropMessage(P_val) == 1)
                             {
-                                printf("message is dropped %s\n", message);
+                                printf("message with header %s is dropped\n", incaseitdropsheader);
                                 memset(header, '\0', 9);
                                 n = recvfrom(sm[i].udp_id, header, 8, MSG_DONTWAIT | MSG_PEEK, (struct sockaddr *)&server, &len);
                                 // bad guy check
@@ -588,7 +587,7 @@ void *R()
                             int seq = (header[1] - '0') * 8 + (header[2] - '0') * 4 + (header[3] - '0') * 2 + (header[4] - '0');
 
                             // check if the message is in the window
-                            if ((seq >= sm[i].rwnd.middle && seq < sm[i].rwnd.right && sm[i].rwnd.middle < sm[i].rwnd.right) || (!(seq >= sm[i].rwnd.right && seq < sm[i].rwnd.middle) && sm[i].rwnd.middle > sm[i].rwnd.right) || (sm[i].rwnd.middle == sm[i].rwnd.right == seq))
+                            if ((seq >= sm[i].rwnd.middle && seq < sm[i].rwnd.right && sm[i].rwnd.middle < sm[i].rwnd.right) || (!(seq >= sm[i].rwnd.right && seq < sm[i].rwnd.middle) && sm[i].rwnd.middle > sm[i].rwnd.right) || ((sm[i].rwnd.middle == sm[i].rwnd.right) && (seq == sm[i].rwnd.middle)))
                             {
                                 // it is in the window
                                 // check if it is a duplicate message
@@ -723,7 +722,7 @@ void *R()
 
                             // update the window
                             // check if the seq is in the window
-                            if ((seq >= sm[i].swnd.middle && seq < sm[i].swnd.right && sm[i].swnd.middle < sm[i].swnd.right) || !(seq >= sm[i].swnd.right && seq < sm[i].swnd.middle && sm[i].swnd.middle > sm[i].swnd.right) || sm[i].swnd.middle == sm[i].swnd.right == seq)
+                            if ((seq >= sm[i].swnd.middle && seq < sm[i].swnd.right && sm[i].swnd.middle < sm[i].swnd.right) || !(seq >= sm[i].swnd.right && seq < sm[i].swnd.middle && sm[i].swnd.middle > sm[i].swnd.right) || ((sm[i].swnd.middle == sm[i].swnd.right) && (sm[i].swnd.middle == seq)))
                             {
                                 // it is in window
                                 // check if it is the next message in order
@@ -775,4 +774,47 @@ void *R()
 
     // detach the shared memory
     shmdt(sm);
+}
+
+void *G(void)
+{
+    // make semaphore for the shared memory
+    key_t sem_key = ftok("initmsocket.c", 1);
+    int sem_id = semget(sem_key, 1, 0666);
+
+    // get the shared memory
+    key_t key = ftok("initmsocket.c", 2);
+    int sm_id = shmget(key, sizeof(SM) * 25, 0666);
+
+    // attach the shared memory to the process
+    SM *sm = (SM *)shmat(sm_id, NULL, 0);
+
+    while (1)
+    {
+        sleep(2*T);
+
+        // do garbage collection
+        P(sem_id);
+        for (int i = 0; i < 25; i++)
+        {
+            if (sm[i].alloted == 1)
+            {
+                int ret = kill(sm[i].pid, 0);
+                if (ret == -1)
+                {
+                    // process is dead
+                    // close the udp socket
+                    if (sm[i].udp_id != 0)
+                        close(sm[i].udp_id);
+                    printf("Process %d is dead, cleaning up MTP socket %d\n", sm[i].pid, sm[i].mtp_id);
+
+                    // remove from the fd set
+                    FD_CLR(sm[i].udp_id, &fd);
+
+                    memset(&sm[i], 0, sizeof(SM));
+                }
+            }
+        }
+        V(sem_id);
+    }
 }

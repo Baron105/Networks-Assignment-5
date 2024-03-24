@@ -40,4 +40,4 @@ One single makefile has been provided which can be used to compile all the files
 
 ## Conclusion
 
-We have successfully implemented the MTP protocol which ensures reliable data transfer over an unreliable communication channel (UDP) along with proper flow control. We have tested the protocol with different probability values and have observed the behaviour of the protocol. The protocol is able to send large files reliably over the unreliable channel. (We have tested with the Romeo and Juliet book file which is around 166KB in size)
+We have successfully implemented the MTP protocol which ensures reliable data transfer over an unreliable communication channel (UDP) along with proper flow control. We have tested the protocol with different probability values and have observed the behaviour of the protocol. The protocol is able to send large files reliably over the unreliable channel. We have tested with the Romeo and Juliet book file which is around 166KB in size and a diffchecker shows that the file received is exactly the same as the file sent.

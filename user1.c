@@ -1,11 +1,13 @@
 #include "msocket.h"
 
+int msgs = 0;
 struct sembuf sem_lock = {0, -1, 0};
 struct sembuf sem_unlock = {0, 1, 0};
 
+
 int main()
 {
-    int s = m_socket(AF_INET, SOCK_DGRAM, 0);
+    int s = m_socket(AF_INET, SOCK_MTP, 0);
     if (s < 0)
     {
         perror("socket error\n");
@@ -15,9 +17,9 @@ int main()
     printf("socket id = %d\n", s);
 
     long s_ip = inet_addr("127.0.0.1");
-    int s_port = htons(1234);
+    int s_port = htons(1236);
     long d_ip = inet_addr("127.0.0.1");
-    int d_port = htons(1235);
+    int d_port = htons(1237);
 
     int ret = m_bind(s, s_ip, s_port, d_ip, d_port);
     if (ret < 0)
@@ -31,40 +33,47 @@ int main()
 
     char buf[1024];
 
-    int i;
-    
-    for (i = 0; i < 100; i++)
+    int fd = open("romeo.txt", O_RDONLY);
+    // int df = open("trial.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+    while (1)
     {
-        sprintf(buf, "Hello%d", i);
-
-        sleep(1);
-
-
-        ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
-        while(ret<0)
+        int x = read(fd, buf, 1023);
+        // write(df, buf, x);
+        msgs++;
+        if (x == 0)
         {
-            perror("sendto error\n");
-            sleep(1);
-            ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
+            break;
         }
-        // return -1;
-        printf("message put in buf=%s\n",buf);
 
-        memset(buf, 0, sizeof(buf));
+        ret = m_sendto(s, buf, strlen(buf)+1, 0, d_ip, d_port);
+        usleep(100000);
+        while (ret < 0)
+        {
+            perror("sendto error");
+            usleep(100000);
+            ret = m_sendto(s, buf, strlen(buf)+1, 0, d_ip, d_port);
+        }
+        
+        // print message sent along with first 8 characters
+
+        printf("message sent\n");
+
+        memset(buf, '\0', sizeof(buf));
     }
 
-    // write terminal message
+    // terminal message
+    // 10 # symbols
     strcpy(buf, "##########");
+
     ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
-    while(ret<0)
+    while (ret < 0)
     {
-        perror("sendto error\n");
-        sleep(1);
+        perror("sendto error");
+        usleep(100000);
         ret = m_sendto(s, buf, strlen(buf), 0, d_ip, d_port);
     }
-
-
-    memset(buf, 0, sizeof(buf));
+    msgs++;
 
     // get the semaphore for the shared memory
     key_t sem_key = ftok("initmsocket.c", 1);
@@ -77,14 +86,14 @@ int main()
     // attach the shared memory to the process
     SM *sm = (SM *)shmat(sm_id, NULL, 0);
 
-    sleep(30);
+    sleep(60);
 
     P(sem_id);
-    double avg_transmission_cnt = (1.0*sm[s-1].transmission_cnt) / (i);
+    double avg_transmission_cnt = (1.0*sm[s-1].transmission_cnt) / msgs;
     printf("Average transmission count = %lf\n", avg_transmission_cnt);
     V(sem_id);
 
-
+    shmdt(sm);
 
     // ret = m_close(s);
     // if (ret < 0)
@@ -98,7 +107,7 @@ int main()
     // key_t key = ftok("initmsocket.c", 2);
     // int sm_id = shmget(key, sizeof(SM) * 25, 0666|IPC_CREAT);
 
-    // // attach the shared memory to the process
+    // attach the shared memory to the process
     // SM *sm = (SM *)shmat(sm_id, NULL, 0);
 
     // for(int i=15;i<100;i++)
@@ -111,10 +120,6 @@ int main()
     //     printf("\n");
     //     sleep(1);
     // }
-
-    // shmdt(sm);
-
-    while(1);
 
     return 0;
 }
